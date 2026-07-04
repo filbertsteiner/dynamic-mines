@@ -1,43 +1,48 @@
 # Deploying Dynamic Mines
 
-The app is a static Vite + React SPA — any static host works. It's configured
-with `base: './'` (relative asset paths), so it runs at a domain root or under a
-subpath.
+The app is a static Vite + React SPA (`base: './'`, relative asset paths), so it
+runs at a domain root or under a subpath.
 
-## Live host: GitHub Pages (default)
+## Important: build locally, not on CI
 
-A GitHub Action (`.github/workflows/deploy.yml`) builds and publishes on every
-push to `main`. Once set up, the site lives at:
+This project's dependency versions come from the dev sandbox and are **not all
+available on the public npm registry**, so `npm ci` / `npm install` on a normal
+CI runner or fresh machine will fail. We therefore **build locally and publish
+the finished output**. (To make the project portable, re-pin dependencies in
+`package.json` to versions that exist on public npm, then regenerate the lockfile.)
+
+## Live host: GitHub Pages
+
+Deploy (build + publish the prebuilt `dist/` to the `gh-pages` branch):
 
 ```
-https://<your-github-user>.github.io/dynamic-mines/
+npm run deploy
 ```
 
-One-time setup (done by the deploy script):
-1. Create a **public** repo `dynamic-mines` and push.
-2. Enable Pages with **GitHub Actions** as the source.
-3. Push → the workflow builds and deploys.
+Site: `https://<your-github-user>.github.io/dynamic-mines/`
 
-To ship a change afterwards: `git push` — the Action redeploys automatically.
+Pages must be set to serve from the **`gh-pages` branch, `/` (root)** — this is
+configured once via the API in the deploy step. After that, `npm run deploy`
+ships any change.
 
 ## REQUIRED after first deploy — allowlist the origin
 
-Dynamic blocks requests from origins that aren't allowlisted. Add the site's
-origin (scheme + host, **no path**) in the dashboard:
+Dynamic blocks non-allowlisted origins. Add the site's origin (scheme + host,
+**no path**):
 
 - **Dynamic → Security/Settings → Allowed Origins** → add
   `https://<your-github-user>.github.io`
 
-Everything else (Base Sepolia, social providers, the shared vault) is
-environment-level and carries over automatically.
+Base Sepolia, social providers, and the shared vault are environment-level and
+carry over automatically.
 
-## Alternative host: Vercel (root domain, custom domains)
+## Alternative host: Vercel / Netlify
+
+Because CI can't `npm install`, use their CLIs to deploy the **prebuilt** folder:
 
 ```
-npm i -g vercel     # or use npx
-vercel --prod
+npm run build
+npx vercel deploy --prebuilt dist   # or: npx netlify deploy --dir dist --prod
 ```
 
-Vercel auto-detects Vite. Then add the Vercel URL's origin to Allowed Origins.
-Optionally set `VITE_DYNAMIC_ENVIRONMENT_ID` in the host's env vars to point at a
-different Dynamic environment (e.g. Live instead of Sandbox).
+Then add that host's origin to Allowed Origins.
