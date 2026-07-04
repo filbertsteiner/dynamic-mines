@@ -135,9 +135,15 @@ function WalletAuth({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="auth-wallets">
       {WALLETS.map((w) => (
-        <button key={w.id} className="wallet-btn" onClick={() => attempt(w.label)}>
+        <button
+          key={w.id}
+          className={`wallet-btn${w.recommended ? " recommended" : ""}`}
+          onClick={() => attempt(w.label)}
+        >
           <span className="wallet-glyph">{w.glyph}</span>
           {w.label}
+          {w.note && <span className="wallet-note">{w.note}</span>}
+          {w.recommended && <span className="wallet-rec">Recommended</span>}
         </button>
       ))}
       {note && <p className="auth-note">{note}</p>}

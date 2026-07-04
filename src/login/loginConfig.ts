@@ -23,6 +23,7 @@ export interface LoginConfig {
 // Real Dynamic social providers (Dashboard → Social Providers).
 export const SOCIAL_PROVIDERS = [
   { id: "google", label: "Google", glyph: "G", color: "#ea4335" },
+  { id: "microsoft", label: "Microsoft", glyph: "⊞", color: "#00a4ef" },
   { id: "apple", label: "Apple", glyph: "", color: "#f5f5f7" },
   { id: "twitter", label: "X", glyph: "𝕏", color: "#f5f5f7" },
   { id: "discord", label: "Discord", glyph: "◈", color: "#5865f2" },
@@ -30,13 +31,22 @@ export const SOCIAL_PROVIDERS = [
   { id: "github", label: "GitHub", glyph: "", color: "#f5f5f7" },
 ] as const;
 
-export const WALLETS = [
+// Wallet connect options. Fireblocks is featured first (connects via
+// WalletConnect) — a Fireblocks-secured wallet plugs right in.
+export interface WalletOption {
+  id: string;
+  label: string;
+  glyph: string;
+  recommended?: boolean;
+  note?: string;
+}
+export const WALLETS: WalletOption[] = [
+  { id: "fireblocks", label: "Fireblocks", glyph: "🧱", recommended: true, note: "via WalletConnect" },
   { id: "metamask", label: "MetaMask", glyph: "🦊" },
   { id: "coinbase", label: "Coinbase Wallet", glyph: "🔵" },
   { id: "walletconnect", label: "WalletConnect", glyph: "🔗" },
   { id: "phantom", label: "Phantom", glyph: "👻" },
-  { id: "rainbow", label: "Rainbow", glyph: "🌈" },
-] as const;
+];
 
 export const ACCENTS = ["#863bff", "#4361ee", "#14b8a6", "#ec4899", "#f59e0b"];
 
