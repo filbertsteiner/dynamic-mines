@@ -7,6 +7,7 @@ import {
   isProviderEnabled,
 } from "../wallet/useProjectSettings";
 import { SOCIAL_PROVIDERS, WALLETS, type LoginConfig } from "./loginConfig";
+import { WalletConnectModal } from "./WalletConnectModal";
 
 function EmailAuth() {
   const [email, setEmail] = useState("");
@@ -114,15 +115,25 @@ function SocialAuth() {
   );
 }
 
+// Wallets that connect for real via WalletConnect (QR). Others are demo previews
+// (they'd use injected-wallet discovery, which we haven't wired).
+const WALLETCONNECT_IDS = new Set(["fireblocks", "walletconnect"]);
+
 function WalletAuth({ collapsed }: { collapsed: boolean }) {
   const { log } = useDevLog();
   const [note, setNote] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(!collapsed);
+  const [wcLabel, setWcLabel] = useState<string | null>(null);
 
-  function attempt(label: string) {
+  function onWalletClick(id: string, label: string) {
+    setNote(null);
+    if (WALLETCONNECT_IDS.has(id)) {
+      setWcLabel(label); // open the real WalletConnect QR modal
+      return;
+    }
     log({ category: "wallet", onChain: false, title: `connectWithWalletProvider("${label}")` });
     setNote(
-      `Demo preview — external wallets (incl. ${label} via WalletConnect) connect through Dynamic's useConnectWithWalletProvider. Add a WalletConnect Project ID to make these live.`
+      `Demo preview — ${label} connects via injected-wallet discovery (useConnectWithWalletProvider). Use the Fireblocks or WalletConnect option for a live QR connection.`
     );
   }
 
@@ -140,7 +151,7 @@ function WalletAuth({ collapsed }: { collapsed: boolean }) {
         <button
           key={w.id}
           className={`wallet-btn${w.recommended ? " recommended" : ""}`}
-          onClick={() => attempt(w.label)}
+          onClick={() => onWalletClick(w.id, w.label)}
         >
           <img className="brand-logo" src={w.logo} alt="" />
           {w.label}
@@ -149,6 +160,9 @@ function WalletAuth({ collapsed }: { collapsed: boolean }) {
         </button>
       ))}
       {note && <p className="auth-note">{note}</p>}
+      {wcLabel && (
+        <WalletConnectModal label={wcLabel} onClose={() => setWcLabel(null)} />
+      )}
     </div>
   );
 }
