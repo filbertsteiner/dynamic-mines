@@ -103,9 +103,7 @@ function SocialAuth() {
             }
             onClick={() => void connect(p.id, p.label)}
           >
-            <span className="social-glyph" style={{ color: p.color }}>
-              {p.glyph}
-            </span>
+            <img className="brand-logo" src={p.logo} alt="" />
             {p.label}
             {isProviderEnabled(settings, p.id) && <span className="live-dot" />}
           </button>
@@ -144,7 +142,7 @@ function WalletAuth({ collapsed }: { collapsed: boolean }) {
           className={`wallet-btn${w.recommended ? " recommended" : ""}`}
           onClick={() => attempt(w.label)}
         >
-          <span className="wallet-glyph">{w.glyph}</span>
+          <img className="brand-logo" src={w.logo} alt="" />
           {w.label}
           {w.note && <span className="wallet-note">{w.note}</span>}
           {w.recommended && <span className="wallet-rec">Recommended</span>}

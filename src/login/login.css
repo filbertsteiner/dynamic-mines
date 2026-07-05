@@ -214,8 +214,15 @@ button.accent:hover:not(:disabled) {
 .ghost-wide:hover {
   border-color: var(--accent);
 }
-.social-glyph {
-  font-weight: 800;
+/* Brand logos on a white chip so every mark is crisp on dark cards */
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #fff;
+  padding: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .social-btn.live {
   border-color: #34d399;
