@@ -193,6 +193,11 @@ button.accent:hover:not(:disabled) {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+/* Left-align logo + label (was centered, looked odd) */
+.social-btn {
+  justify-content: flex-start;
+  padding-left: 12px;
+}
 .social-btn,
 .wallet-btn,
 .wallet-collapse,

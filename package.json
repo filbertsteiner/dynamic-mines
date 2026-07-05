@@ -12,7 +12,6 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "compile:vault": "node scripts/compile-vault.mjs",
-    "deploy": "bash scripts/deploy-pages.sh",
     "gen:logos": "node scripts/gen-logos.mjs"
   },
   "dependencies": {

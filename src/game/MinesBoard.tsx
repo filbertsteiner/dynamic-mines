@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "./GameProvider";
 import { TILE_COUNT, currentPoints, currentMultiplier } from "./mines";
+import { HowToPlay } from "./HowToPlay";
 import { useDevLog } from "../dev/DevLog";
 
 const MINE_OPTIONS = [1, 3, 5];
@@ -19,6 +20,10 @@ export function MinesBoard() {
     clearRound,
   } = useGame();
   const { log } = useDevLog();
+  const [showHelp, setShowHelp] = useState(false);
+  // Local text state so the wager field can be cleared/edited freely
+  // (clamping happens when a round starts, not on every keystroke).
+  const [wagerText, setWagerText] = useState(String(wager));
 
   const playing = round?.status === "playing";
   const finished = round?.status === "busted" || round?.status === "cashed";
@@ -54,7 +59,13 @@ export function MinesBoard() {
   return (
     <>
       <div className="panel">
-        <p className="panel-title">Mines</p>
+        <div className="row">
+          <p className="panel-title">Mines</p>
+          <button className="ghost" onClick={() => setShowHelp(true)}>
+            How to play
+          </button>
+        </div>
+        {showHelp && <HowToPlay onClose={() => setShowHelp(false)} />}
         {!round && (
           <div className="setup">
             <label>
@@ -63,8 +74,13 @@ export function MinesBoard() {
                 type="number"
                 min={1}
                 max={credits}
-                value={wager}
-                onChange={(e) => setWager(Math.max(1, Number(e.target.value)))}
+                value={wagerText}
+                onChange={(e) => {
+                  setWagerText(e.target.value);
+                  const n = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(n)) setWager(n);
+                }}
+                onBlur={() => setWagerText(String(wager))}
               />
             </label>
             <label>
@@ -80,7 +96,7 @@ export function MinesBoard() {
                 ))}
               </select>
             </label>
-            <button onClick={play} disabled={!canPlay}>
+            <button className="play-btn" onClick={play} disabled={!canPlay}>
               {credits <= 0 ? "Deposit to play" : `Play for ${wager} credits`}
             </button>
           </div>

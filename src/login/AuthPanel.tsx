@@ -122,7 +122,7 @@ function WalletAuth({ collapsed }: { collapsed: boolean }) {
   function attempt(label: string) {
     log({ category: "wallet", onChain: false, title: `connectWithWalletProvider("${label}")` });
     setNote(
-      "Wallet connect uses useConnectWithWalletProvider — register wallet discovery to activate."
+      `Demo preview — external wallets (incl. ${label} via WalletConnect) connect through Dynamic's useConnectWithWalletProvider. Add a WalletConnect Project ID to make these live.`
     );
   }
 
