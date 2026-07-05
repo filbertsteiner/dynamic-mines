@@ -42,14 +42,12 @@ export function WalletConnectModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal wc-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="dev-head">
-          <div>
-            <strong>Connect {label}</strong>
-            <p className="hint">Scan with any WalletConnect wallet (incl. Fireblocks).</p>
-          </div>
-          <button className="ghost" onClick={onClose}>
-            ✕
-          </button>
+        <button className="wc-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+        <div className="wc-head">
+          <strong>Connect {label}</strong>
+          <p className="hint">Scan with any WalletConnect wallet, incl. Fireblocks.</p>
         </div>
 
         {error ? (
@@ -62,26 +60,31 @@ export function WalletConnectModal({
         ) : uri ? (
           <div className="wc-body">
             <div className="wc-qr">
-              <QRCode value={uri} size={200} bgColor="#ffffff" fgColor="#0b0912" />
+              <QRCode value={uri} size={192} bgColor="#ffffff" fgColor="#0b0912" />
             </div>
+            <p className="wc-status">
+              <span className="spinner" /> Waiting for wallet approval…
+            </p>
             <div className="wc-actions">
-              <a className="ghost-wide" href={uri}>
+              <a className="wc-btn" href={uri}>
                 Open in wallet
               </a>
               <button
-                className={`copy-btn${copied ? " copied" : ""}`}
+                className="wc-btn"
                 onClick={() => {
                   void navigator.clipboard.writeText(uri);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 1500);
                 }}
               >
-                {copied ? "✓ Copied URI" : "Copy URI"}
+                {copied ? "✓ Copied" : "Copy URI"}
               </button>
             </div>
           </div>
         ) : (
-          <p className="hint">Starting WalletConnect…</p>
+          <p className="wc-status">
+            <span className="spinner" /> Starting WalletConnect…
+          </p>
         )}
       </div>
     </div>

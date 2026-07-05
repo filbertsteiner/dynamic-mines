@@ -285,6 +285,33 @@ button.accent:hover:not(:disabled) {
 }
 
 /* ---- WalletConnect QR modal ---- */
+.wc-modal {
+  position: relative;
+  max-width: 340px;
+  text-align: center;
+  align-items: center;
+}
+.wc-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--l-dim, #a99fc4);
+  font-size: 0.9rem;
+  padding: 6px 9px;
+  border-radius: 8px;
+}
+.wc-close:hover {
+  color: var(--l-text, #fff);
+}
+.wc-head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+.wc-head .hint {
+  margin-top: 4px;
+}
 .wc-body {
   display: flex;
   flex-direction: column;
@@ -294,15 +321,51 @@ button.accent:hover:not(:disabled) {
 .wc-qr {
   background: #fff;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 14px;
+  line-height: 0;
+}
+.wc-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--l-dim, #a99fc4);
+  margin: 0;
+}
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--border-strong, #3d3157);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .wc-actions {
   display: flex;
   gap: 8px;
   width: 100%;
 }
-.wc-actions .ghost-wide {
+.wc-btn {
   flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong, #3d3157);
+  background: var(--surface-2, #1d1830);
+  color: var(--text, #f2eefb);
+  font-weight: 600;
+  font-size: 0.84rem;
+  text-decoration: none;
+}
+.wc-btn:hover {
+  border-color: var(--accent);
 }
 
 /* ---- Designer pill + panel (bottom-left) ---- */
