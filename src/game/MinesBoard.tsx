@@ -131,12 +131,9 @@ export function MinesBoard() {
             const isRevealed = round?.revealed.has(i);
             const isMine = round?.minePositions.has(i);
             const showAll = finished;
-            let face = "";
+            const show = isRevealed || (showAll && isMine);
             let cls = "tile";
-            if (isRevealed || (showAll && isMine)) {
-              face = isMine ? "💣" : "💎";
-              cls += isMine ? " tile-mine" : " tile-gem";
-            }
+            if (show) cls += isMine ? " tile-mine" : " tile-gem";
             return (
               <button
                 key={i}
@@ -144,7 +141,13 @@ export function MinesBoard() {
                 disabled={!playing || isRevealed}
                 onClick={() => reveal(i)}
               >
-                {face}
+                {show && (
+                  <img
+                    className="tile-icon"
+                    src={`${import.meta.env.BASE_URL}game/${isMine ? "mine-filled" : "safe-filled"}.svg`}
+                    alt={isMine ? "bomb" : "gem"}
+                  />
+                )}
               </button>
             );
           })}

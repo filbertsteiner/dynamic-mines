@@ -448,12 +448,17 @@ select:focus {
 .tile:disabled {
   opacity: 1;
 }
+.tile-icon {
+  width: 66%;
+  height: 66%;
+  object-fit: contain;
+}
 .tile-gem {
-  background: linear-gradient(135deg, rgba(170, 59, 255, 0.35), rgba(71, 191, 255, 0.25));
-  border-color: var(--purple);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.08));
+  border-color: #22c55e;
 }
 .tile-mine {
-  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.28), rgba(153, 27, 27, 0.35));
   border-color: #ef4444;
 }
 

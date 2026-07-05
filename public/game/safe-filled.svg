@@ -1,0 +1,9 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(64,64)">
+<polygon points="0,-46 40,-23 40,23 0,46 -40,23 -40,-23" fill="#0e2818" stroke="#22c55e" stroke-width="2"/>
+<polygon points="0,-46 40,-23 0,0 -40,-23" fill="#4ade80"/>
+<polygon points="40,-23 40,23 0,0" fill="#16a34a"/>
+<polygon points="-40,-23 -40,23 0,0" fill="#86efac"/>
+<polygon points="0,46 40,23 0,0 -40,23" fill="#15803d"/>
+</g>
+</svg>
