@@ -1,9 +1,6 @@
 import { useState } from "react";
-import {
-  useSendEmailOTP,
-  useVerifyOTP,
-  useSignInWithSocialPopUp,
-} from "@dynamic-labs-sdk/react-hooks";
+import { useSendEmailOTP, useVerifyOTP } from "@dynamic-labs-sdk/react-hooks";
+import { signInWithSocialPopUp } from "@dynamic-labs-sdk/client";
 import { useDevLog } from "../dev/DevLog";
 import {
   useProjectSettings,
@@ -65,9 +62,28 @@ function EmailAuth() {
 
 function SocialAuth() {
   const { log } = useDevLog();
-  const { mutate: signInWithSocial } = useSignInWithSocialPopUp();
   const settings = useProjectSettings();
   const [note, setNote] = useState<string | null>(null);
+
+  // Call the popup sign-in DIRECTLY in the click handler (not via react-query
+  // mutate) so window.open keeps the user-gesture and the browser doesn't block
+  // the popup. Surface the real error for providers that are actually enabled.
+  async function connect(id: string, label: string) {
+    setNote(null);
+    const enabled = isProviderEnabled(settings, id);
+    log({ category: "auth", onChain: false, title: `signInWithSocialPopUp("${id}")` });
+    try {
+      await signInWithSocialPopUp({ provider: id as never });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log({ category: "auth", onChain: false, title: `social sign-in failed: ${label}`, detail: msg });
+      setNote(
+        enabled
+          ? `${label} sign-in error: ${msg}`
+          : `Enable ${label} in Dashboard → Social Providers to activate this button.`
+      );
+    }
+  }
 
   return (
     <div className="auth-social">
@@ -81,23 +97,7 @@ function SocialAuth() {
                 ? `Continue with ${p.label} (live)`
                 : `${p.label} — enable in dashboard`
             }
-            onClick={() => {
-              setNote(null);
-              log({
-                category: "auth",
-                onChain: false,
-                title: `signInWithSocialPopUp("${p.id}")`,
-              });
-              signInWithSocial(
-                { provider: p.id },
-                {
-                  onError: () =>
-                    setNote(
-                      `Enable ${p.label} in Dashboard → Social Providers to activate this button.`
-                    ),
-                }
-              );
-            }}
+            onClick={() => void connect(p.id, p.label)}
           >
             <span className="social-glyph" style={{ color: p.color }}>
               {p.glyph}
