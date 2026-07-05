@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSendEmailOTP, useVerifyOTP } from "@dynamic-labs-sdk/react-hooks";
-import { signInWithSocialPopUp } from "@dynamic-labs-sdk/client";
+import { signInWithSocialRedirect } from "@dynamic-labs-sdk/client";
 import { useDevLog } from "../dev/DevLog";
 import {
   useProjectSettings,
@@ -65,23 +65,27 @@ function SocialAuth() {
   const settings = useProjectSettings();
   const [note, setNote] = useState<string | null>(null);
 
-  // Call the popup sign-in DIRECTLY in the click handler (not via react-query
-  // mutate) so window.open keeps the user-gesture and the browser doesn't block
-  // the popup. Surface the real error for providers that are actually enabled.
+  // Web uses the REDIRECT flow (popup is React-Native only). This navigates the
+  // browser to the provider; completeSocialRedirect() finishes it on return
+  // (see SocialRedirectHandler). Only redirect for providers actually enabled —
+  // otherwise show the friendly "enable in dashboard" hint.
   async function connect(id: string, label: string) {
     setNote(null);
-    const enabled = isProviderEnabled(settings, id);
-    log({ category: "auth", onChain: false, title: `signInWithSocialPopUp("${id}")` });
+    if (!isProviderEnabled(settings, id)) {
+      setNote(`Enable ${label} in Dashboard → Social Providers to activate this button.`);
+      return;
+    }
+    log({ category: "auth", onChain: false, title: `signInWithSocialRedirect("${id}")` });
     try {
-      await signInWithSocialPopUp({ provider: id as never });
+      await signInWithSocialRedirect({
+        provider: id as never,
+        redirectUrl: window.location.href,
+      });
+      // The page redirects to the provider from here.
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log({ category: "auth", onChain: false, title: `social sign-in failed: ${label}`, detail: msg });
-      setNote(
-        enabled
-          ? `${label} sign-in error: ${msg}`
-          : `Enable ${label} in Dashboard → Social Providers to activate this button.`
-      );
+      setNote(`${label} sign-in error: ${msg}`);
     }
   }
 

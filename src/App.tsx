@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { DevLogEvents } from "./dev/DevLogEvents";
 import { DevDrawer } from "./dev/DevDrawer";
 import { useDevLog } from "./dev/DevLog";
+import { SocialRedirectHandler } from "./login/SocialRedirectHandler";
 
 function App() {
   const { drawerOpen } = useDevLog();
@@ -16,6 +17,8 @@ function App() {
         <WaasBootstrap />
         {/* Streams SDK events into the developer-mode drawer. */}
         <DevLogEvents />
+        {/* Completes social sign-in when the user returns from the OAuth redirect. */}
+        <SocialRedirectHandler />
         <ErrorBoundary>
           <Dashboard />
         </ErrorBoundary>
