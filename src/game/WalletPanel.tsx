@@ -7,6 +7,7 @@ import { useEvmMoney } from "../wallet/useEvmMoney";
 import { useVaultAddress } from "../wallet/useVaultAddress";
 import { useGame } from "./GameProvider";
 import { WalletSettings } from "./WalletSettings";
+import { StepUpModal } from "./StepUpModal";
 import {
   CREDITS_PER_ETH,
   FAUCET_URL,
@@ -38,6 +39,9 @@ export function WalletPanel({
     deployVault,
     deposit,
     withdraw,
+    readOwner,
+    readVaultTotal,
+    sweep,
     busy,
   } = useEvmMoney(walletAccount, client);
   const { vaultAddress, setVaultAddress, isShared } = useVaultAddress();
@@ -49,6 +53,44 @@ export function WalletPanel({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Operator (owner-only) state.
+  const [isOwner, setIsOwner] = useState(false);
+  const [vaultTotal, setVaultTotal] = useState<string | null>(null);
+  const [sweepTo, setSweepTo] = useState<string>(address);
+  const [showStepUp, setShowStepUp] = useState(false);
+
+  useEffect(() => {
+    if (!vaultAddress) return;
+    let ok = true;
+    void (async () => {
+      try {
+        const owner = await readOwner(vaultAddress);
+        if (ok) setIsOwner(owner.toLowerCase() === address.toLowerCase());
+        const total = await readVaultTotal(vaultAddress);
+        if (ok) setVaultTotal(total);
+      } catch {
+        /* vault not reachable */
+      }
+    })();
+    return () => {
+      ok = false;
+    };
+  }, [vaultAddress, address, readOwner, readVaultTotal, lastTx]);
+
+  async function doSweep() {
+    setShowStepUp(false);
+    setError(null);
+    if (!vaultAddress || !vaultTotal) return;
+    try {
+      const amountWei = parseEther(vaultTotal);
+      if (amountWei <= 0n) return;
+      const hash = await sweep(sweepTo as `0x${string}`, amountWei, vaultAddress);
+      setLastTx(hash);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sweep failed");
+    }
+  }
 
   // Diagnostic: is the game chain actually enabled in this Dynamic environment?
   const [networks, setNetworks] = useState<NetworkData[]>([]);
@@ -272,6 +314,42 @@ export function WalletPanel({
         </p>
       )}
       {error && <p className="hint err">{error}</p>}
+
+      {/* Owner-only operator controls — sweep the vault treasury. */}
+      {isOwner && (
+        <div className="operator">
+          <div className="row">
+            <span className="net-badge">🛠 Operator</span>
+            <span className="label">
+              Vault holds {vaultTotal ? `${Number(vaultTotal).toFixed(5)} ETH` : "…"}
+            </span>
+          </div>
+          <input
+            value={sweepTo}
+            onChange={(e) => setSweepTo(e.target.value)}
+            placeholder="Sweep to address (0x…)"
+          />
+          <button
+            className="secondary"
+            disabled={busy !== null || !vaultTotal || Number(vaultTotal) <= 0}
+            onClick={() => setShowStepUp(true)}
+          >
+            {busy === "sweep" ? "Sweeping…" : "Sweep vault → address"}
+          </button>
+          <p className="hint">
+            Owner-only, and gated by step-up verification. In production this key
+            lives in Fireblocks (MPC + policy).
+          </p>
+        </div>
+      )}
+
+      {showStepUp && (
+        <StepUpModal
+          action="sweep vault"
+          onVerified={() => void doSweep()}
+          onClose={() => setShowStepUp(false)}
+        />
+      )}
     </div>
   );
 }

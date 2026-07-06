@@ -26,7 +26,9 @@ const publicClient = createPublicClient({
 export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
   const address = walletAccount.address as `0x${string}`;
   const [balanceEth, setBalanceEth] = useState<string | null>(null);
-  const [busy, setBusy] = useState<null | "deploy" | "deposit" | "withdraw">(null);
+  const [busy, setBusy] = useState<
+    null | "deploy" | "deposit" | "withdraw" | "sweep"
+  >(null);
   const { log } = useDevLog();
 
   const refreshBalance = useCallback(async () => {
@@ -159,6 +161,57 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     [address]
   );
 
+  // Who owns (can sweep) the vault, and how much ETH it holds in total.
+  const readOwner = useCallback(
+    (vault: `0x${string}`) =>
+      publicClient.readContract({
+        address: vault,
+        abi: VAULT_ABI,
+        functionName: "owner",
+      }) as Promise<`0x${string}`>,
+    []
+  );
+  const readVaultTotal = useCallback(
+    async (vault: `0x${string}`) =>
+      formatEther(await publicClient.getBalance({ address: vault })),
+    []
+  );
+
+  // Owner-only: move funds out of the vault (refund / redistribute / collect).
+  const sweep = useCallback(
+    async (
+      to: `0x${string}`,
+      amountWei: bigint,
+      vault: `0x${string}`
+    ): Promise<`0x${string}`> => {
+      setBusy("sweep");
+      try {
+        const wc = await getWalletClient();
+        log({
+          category: "tx",
+          onChain: true,
+          title: `vault.sweep() — ${formatEther(amountWei)} ETH`,
+          detail: `to: ${to}\nowner-only operator action`,
+        });
+        const hash = await wc.writeContract({
+          address: vault,
+          abi: VAULT_ABI,
+          functionName: "sweep",
+          args: [to, amountWei],
+          account: wc.account!,
+          chain: GAME_CHAIN,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        log({ category: "tx", onChain: true, title: "Sweep confirmed ✓", detail: `tx: ${hash}` });
+        await refreshBalance();
+        return hash;
+      } finally {
+        setBusy(null);
+      }
+    },
+    [getWalletClient, log, refreshBalance]
+  );
+
   return {
     address,
     balanceEth,
@@ -167,6 +220,9 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     deposit,
     withdraw,
     readVaultBalance,
+    readOwner,
+    readVaultTotal,
+    sweep,
     busy,
   };
 }

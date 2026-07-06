@@ -288,6 +288,21 @@ select:focus {
   align-self: flex-start;
 }
 
+/* Owner-only operator (sweep) controls */
+.operator {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.operator input {
+  width: 100%;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+}
+
 /* Network badge */
 .net-badge {
   display: inline-flex;
