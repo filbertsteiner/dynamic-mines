@@ -176,6 +176,53 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
       formatEther(await publicClient.getBalance({ address: vault })),
     []
   );
+  // Realized revenue available to sweep (contract balance not owed to players).
+  const readSurplus = useCallback(
+    async (vault: `0x${string}`) =>
+      formatEther(
+        (await publicClient.readContract({
+          address: vault,
+          abi: VAULT_ABI,
+          functionName: "surplus",
+        })) as bigint
+      ),
+    []
+  );
+
+  // Owner-only: record a player's game losses as house revenue (moves that
+  // amount out of the player's withdrawable balance into sweepable surplus).
+  const realizeRevenue = useCallback(
+    async (
+      player: `0x${string}`,
+      amountWei: bigint,
+      vault: `0x${string}`
+    ): Promise<`0x${string}`> => {
+      setBusy("sweep");
+      try {
+        const wc = await getWalletClient();
+        log({
+          category: "tx",
+          onChain: true,
+          title: `vault.realizeRevenue() — ${formatEther(amountWei)} ETH`,
+          detail: `player: ${player}\nmoves lost funds from withdrawable → house revenue`,
+        });
+        const hash = await wc.writeContract({
+          address: vault,
+          abi: VAULT_ABI,
+          functionName: "realizeRevenue",
+          args: [player, amountWei],
+          account: wc.account!,
+          chain: GAME_CHAIN,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        log({ category: "tx", onChain: true, title: "Revenue realized ✓", detail: `tx: ${hash}` });
+        return hash;
+      } finally {
+        setBusy(null);
+      }
+    },
+    [getWalletClient, log]
+  );
 
   // Owner-only: move funds out of the vault (refund / redistribute / collect).
   const sweep = useCallback(
@@ -222,6 +269,8 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     readVaultBalance,
     readOwner,
     readVaultTotal,
+    readSurplus,
+    realizeRevenue,
     sweep,
     busy,
   };

@@ -38,8 +38,10 @@ export const GAME_NETWORK_DATA: NetworkData = {
 // vault serve every visitor (the live/shared demo). Deploy it once (Deploy game
 // vault button), copy the address shown, and paste it here. While null, each
 // browser deploys its own vault locally (handy for solo dev).
-export const SHARED_VAULT_ADDRESS: `0x${string}` | null =
-  "0x9dad3a2b312d8ce229368aff3793d370428bb2c8";
+// Reset to null: the GameVault contract was upgraded (adds realizeRevenue +
+// surplus-only sweep), so the old shared vault is stale. Deploy the new one from
+// the app ("Deploy game vault"), then paste its address here to re-share it.
+export const SHARED_VAULT_ADDRESS: `0x${string}` | null = null;
 
 // Exchange rate between test-ETH and in-game credits.
 // 1 test-ETH = 100,000 credits  →  a 0.001 ETH deposit = 100 credits.

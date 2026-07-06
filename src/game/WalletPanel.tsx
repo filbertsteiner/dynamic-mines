@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { parseEther } from "viem";
+import { parseEther, formatEther } from "viem";
 import { getNetworksData } from "@dynamic-labs-sdk/client";
 import type { DynamicClient, NetworkData } from "@dynamic-labs-sdk/client";
 import { createWalletClientForWalletAccount } from "@dynamic-labs-sdk/evm/viem";
@@ -41,6 +41,9 @@ export function WalletPanel({
     withdraw,
     readOwner,
     readVaultTotal,
+    readVaultBalance,
+    readSurplus,
+    realizeRevenue,
     sweep,
     busy,
   } = useEvmMoney(walletAccount, client);
@@ -57,6 +60,8 @@ export function WalletPanel({
   // Operator (owner-only) state.
   const [isOwner, setIsOwner] = useState(false);
   const [vaultTotal, setVaultTotal] = useState<string | null>(null);
+  const [surplus, setSurplus] = useState<string | null>(null);
+  const [onchainBal, setOnchainBal] = useState<string | null>(null);
   const [sweepTo, setSweepTo] = useState<string>(address);
   const [showStepUp, setShowStepUp] = useState(false);
 
@@ -67,8 +72,16 @@ export function WalletPanel({
       try {
         const owner = await readOwner(vaultAddress);
         if (ok) setIsOwner(owner.toLowerCase() === address.toLowerCase());
-        const total = await readVaultTotal(vaultAddress);
-        if (ok) setVaultTotal(total);
+        const [total, surp, bal] = await Promise.all([
+          readVaultTotal(vaultAddress),
+          readSurplus(vaultAddress),
+          readVaultBalance(vaultAddress),
+        ]);
+        if (ok) {
+          setVaultTotal(total);
+          setSurplus(surp);
+          setOnchainBal(bal);
+        }
       } catch {
         /* vault not reachable */
       }
@@ -76,14 +89,32 @@ export function WalletPanel({
     return () => {
       ok = false;
     };
-  }, [vaultAddress, address, readOwner, readVaultTotal, lastTx]);
+  }, [vaultAddress, address, readOwner, readVaultTotal, readSurplus, readVaultBalance, lastTx]);
+
+  // How much this player has "lost" = on-chain withdrawable minus what their
+  // remaining credits are worth. That delta is unrealized house revenue.
+  const creditsWei = BigInt(Math.max(0, credits)) * WEI_PER_CREDIT;
+  const unrealizedWei = onchainBal
+    ? parseEther(onchainBal) - creditsWei
+    : 0n;
+
+  async function doRealize() {
+    setError(null);
+    if (!vaultAddress || unrealizedWei <= 0n) return;
+    try {
+      const hash = await realizeRevenue(address, unrealizedWei, vaultAddress);
+      setLastTx(hash);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Realize failed");
+    }
+  }
 
   async function doSweep() {
     setShowStepUp(false);
     setError(null);
-    if (!vaultAddress || !vaultTotal) return;
+    if (!vaultAddress || !surplus) return;
     try {
-      const amountWei = parseEther(vaultTotal);
+      const amountWei = parseEther(surplus);
       if (amountWei <= 0n) return;
       const hash = await sweep(sweepTo as `0x${string}`, amountWei, vaultAddress);
       setLastTx(hash);
@@ -315,30 +346,58 @@ export function WalletPanel({
       )}
       {error && <p className="hint err">{error}</p>}
 
-      {/* Owner-only operator controls — sweep the vault treasury. */}
+      {/* Owner-only operator controls — realize revenue, then sweep to treasury. */}
       {isOwner && (
         <div className="operator">
           <div className="row">
             <span className="net-badge">🛠 Operator</span>
             <span className="label">
-              Vault holds {vaultTotal ? `${Number(vaultTotal).toFixed(5)} ETH` : "…"}
+              Vault: {vaultTotal ? `${Number(vaultTotal).toFixed(5)} ETH` : "…"}
             </span>
           </div>
+          <div className="row">
+            <span className="label">Owed to players (locked)</span>
+            <span>
+              {vaultTotal && surplus
+                ? `${(Number(vaultTotal) - Number(surplus)).toFixed(5)} ETH`
+                : "…"}
+            </span>
+          </div>
+          <div className="row">
+            <span className="label">Realized revenue (sweepable)</span>
+            <strong className="ok">
+              {surplus ? `${Number(surplus).toFixed(5)} ETH` : "…"}
+            </strong>
+          </div>
+
+          <button
+            className="secondary"
+            disabled={busy !== null || unrealizedWei <= 0n}
+            onClick={() => void doRealize()}
+          >
+            {busy === "sweep"
+              ? "Working…"
+              : unrealizedWei > 0n
+                ? `Realize ${Number(formatEther(unrealizedWei)).toFixed(5)} ETH revenue`
+                : "No revenue to realize yet"}
+          </button>
+
           <input
             value={sweepTo}
             onChange={(e) => setSweepTo(e.target.value)}
-            placeholder="Sweep to address (0x…)"
+            placeholder="Treasury address (0x…)"
           />
           <button
             className="secondary"
-            disabled={busy !== null || !vaultTotal || Number(vaultTotal) <= 0}
+            disabled={busy !== null || !surplus || Number(surplus) <= 0}
             onClick={() => setShowStepUp(true)}
           >
-            {busy === "sweep" ? "Sweeping…" : "Sweep vault → address"}
+            {busy === "sweep" ? "Sweeping…" : "Sweep revenue → treasury"}
           </button>
           <p className="hint">
-            Owner-only, and gated by step-up verification. In production this key
-            lives in Fireblocks (MPC + policy).
+            Player funds stay locked in the contract — the owner can only sweep{" "}
+            <strong>realized revenue</strong>. In production this treasury is a
+            Fireblocks-secured wallet (MPC + policy).
           </p>
         </div>
       )}
