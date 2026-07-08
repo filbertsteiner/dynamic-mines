@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parseEther, formatEther } from "viem";
 import { getNetworksData } from "@dynamic-labs-sdk/client";
 import type { DynamicClient, NetworkData } from "@dynamic-labs-sdk/client";
@@ -39,6 +39,7 @@ export function WalletPanel({
     deployVault,
     deposit,
     cashOut,
+    settle,
     readOwner,
     readVaultTotal,
     readVaultBalance,
@@ -48,8 +49,13 @@ export function WalletPanel({
     busy,
   } = useEvmMoney(walletAccount, client);
   const { vaultAddress, setVaultAddress, isShared } = useVaultAddress();
-  const { credits, withdrawableCredits, addDepositCredits, withdrawCredits } =
-    useGame();
+  const {
+    credits,
+    depositedCredits,
+    withdrawableCredits,
+    addDepositCredits,
+    withdrawCredits,
+  } = useGame();
 
   const [amount, setAmount] = useState(DEPOSIT_PRESETS[0]);
   const [lastTx, setLastTx] = useState<string | null>(null);
@@ -64,6 +70,8 @@ export function WalletPanel({
   const [onchainBal, setOnchainBal] = useState<string | null>(null);
   const [sweepTo, setSweepTo] = useState<string>(address);
   const [showStepUp, setShowStepUp] = useState(false);
+  const [chainTick, setChainTick] = useState(0); // bump to refresh on-chain reads
+  const settlingRef = useRef(false);
 
   useEffect(() => {
     if (!vaultAddress) return;
@@ -89,7 +97,34 @@ export function WalletPanel({
     return () => {
       ok = false;
     };
-  }, [vaultAddress, address, readOwner, readVaultTotal, readSurplus, readVaultBalance, lastTx]);
+  }, [vaultAddress, address, readOwner, readVaultTotal, readSurplus, readVaultBalance, lastTx, chainTick]);
+
+  // Real-time revenue recognition: whenever the player's on-chain balance
+  // exceeds the value of their remaining credits (i.e. they've spent some),
+  // settle that delta on-chain so it moves from "owed to players" to sweepable
+  // revenue — live, as they play, without needing to withdraw.
+  useEffect(() => {
+    // Guard: only reconcile when there's a tracked deposit session, so a
+    // cleared cache (credits=0) can never confiscate a real on-chain balance.
+    if (!vaultAddress || settlingRef.current || busy !== null || depositedCredits <= 0)
+      return;
+    settlingRef.current = true;
+    void (async () => {
+      try {
+        const onchainWei = parseEther(await readVaultBalance(vaultAddress));
+        const remainingWei = BigInt(Math.max(0, credits)) * WEI_PER_CREDIT;
+        const unrealized = onchainWei - remainingWei;
+        if (unrealized >= WEI_PER_CREDIT) {
+          await settle(unrealized, vaultAddress);
+          setChainTick((t) => t + 1); // refresh displayed numbers + re-check
+        }
+      } catch {
+        /* settle will retry on next credits change */
+      } finally {
+        settlingRef.current = false;
+      }
+    })();
+  }, [credits, depositedCredits, vaultAddress, busy, chainTick, readVaultBalance, settle]);
 
   // How much this player has "lost" = on-chain withdrawable minus what their
   // remaining credits are worth. That delta is unrealized house revenue.

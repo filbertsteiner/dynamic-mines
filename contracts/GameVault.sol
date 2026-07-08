@@ -75,6 +75,17 @@ contract GameVault {
         if (forfeitAmount > 0) emit RevenueRealized(msg.sender, forfeitAmount);
     }
 
+    // Player settles their OWN spend in real time: as credits are used in the
+    // game, this moves `amount` out of the caller's withdrawable balance into
+    // house revenue (surplus). No withdrawal required — revenue is recognized as
+    // it's earned. Safe because a player can only reduce their own balance.
+    function settle(uint256 amount) external {
+        require(amount <= balances[msg.sender], "exceeds balance");
+        balances[msg.sender] -= amount;
+        totalLiabilities -= amount;
+        emit RevenueRealized(msg.sender, amount);
+    }
+
     // Owner records house revenue: the `amount` a player lost in the game moves
     // out of their withdrawable balance. The ETH stays in the contract, now as
     // surplus (revenue) rather than a liability.

@@ -147,6 +147,32 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     [getWalletClient, log, refreshBalance]
   );
 
+  // Real-time settlement: as credits are spent, move that value from the
+  // player's withdrawable balance into house revenue. Runs in the background
+  // (no `busy` state) so it doesn't block gameplay.
+  const settle = useCallback(
+    async (amountWei: bigint, vault: `0x${string}`): Promise<`0x${string}`> => {
+      const wc = await getWalletClient();
+      log({
+        category: "tx",
+        onChain: true,
+        title: `vault.settle() — ${formatEther(amountWei)} ETH → revenue`,
+      });
+      const hash = await wc.writeContract({
+        address: vault,
+        abi: VAULT_ABI,
+        functionName: "settle",
+        args: [amountWei],
+        account: wc.account!,
+        chain: GAME_CHAIN,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      log({ category: "tx", onChain: true, title: "Revenue realized on-chain ✓", detail: `tx: ${hash}` });
+      return hash;
+    },
+    [getWalletClient, log]
+  );
+
   // Player cash-out that settles losses: forfeit `forfeitWei` to house revenue
   // and withdraw the rest. Keeps on-chain accounting honest.
   const cashOut = useCallback(
@@ -299,6 +325,7 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     deposit,
     withdraw,
     cashOut,
+    settle,
     readVaultBalance,
     readOwner,
     readVaultTotal,
