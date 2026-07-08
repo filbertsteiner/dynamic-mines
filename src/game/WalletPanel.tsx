@@ -38,7 +38,7 @@ export function WalletPanel({
     refreshBalance,
     deployVault,
     deposit,
-    withdraw,
+    cashOut,
     readOwner,
     readVaultTotal,
     readVaultBalance,
@@ -175,8 +175,12 @@ export function WalletPanel({
     setError(null);
     if (!vaultAddress || withdrawableCredits <= 0) return;
     try {
-      const amountWei = BigInt(withdrawableCredits) * WEI_PER_CREDIT;
-      const hash = await withdraw(amountWei, vaultAddress);
+      // Settle on-chain: forfeit whatever was lost (on-chain balance minus the
+      // value of remaining credits) and withdraw the rest.
+      const onchainWei = parseEther(await readVaultBalance(vaultAddress));
+      const keepWei = BigInt(withdrawableCredits) * WEI_PER_CREDIT;
+      const forfeitWei = onchainWei > keepWei ? onchainWei - keepWei : 0n;
+      const hash = await cashOut(forfeitWei, vaultAddress);
       withdrawCredits(withdrawableCredits);
       setLastTx(hash);
     } catch (e) {

@@ -147,6 +147,38 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     [getWalletClient, log, refreshBalance]
   );
 
+  // Player cash-out that settles losses: forfeit `forfeitWei` to house revenue
+  // and withdraw the rest. Keeps on-chain accounting honest.
+  const cashOut = useCallback(
+    async (forfeitWei: bigint, vault: `0x${string}`): Promise<`0x${string}`> => {
+      setBusy("withdraw");
+      try {
+        const wc = await getWalletClient();
+        log({
+          category: "tx",
+          onChain: true,
+          title: `vault.cashOut() — forfeit ${formatEther(forfeitWei)} ETH`,
+          detail: `settles game losses → surplus, withdraws remaining balance`,
+        });
+        const hash = await wc.writeContract({
+          address: vault,
+          abi: VAULT_ABI,
+          functionName: "cashOut",
+          args: [forfeitWei],
+          account: wc.account!,
+          chain: GAME_CHAIN,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        log({ category: "tx", onChain: true, title: "Cash-out confirmed ✓", detail: `tx: ${hash}` });
+        await refreshBalance();
+        return hash;
+      } finally {
+        setBusy(null);
+      }
+    },
+    [getWalletClient, log, refreshBalance]
+  );
+
   // On-chain balance the vault owes this player.
   const readVaultBalance = useCallback(
     async (vault: `0x${string}`): Promise<string> => {
@@ -266,6 +298,7 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
     deployVault,
     deposit,
     withdraw,
+    cashOut,
     readVaultBalance,
     readOwner,
     readVaultTotal,

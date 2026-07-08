@@ -56,6 +56,25 @@ contract GameVault {
         emit Withdrawn(msg.sender, amount);
     }
 
+    // Player cash-out that SETTLES game losses: the caller forfeits
+    // `forfeitAmount` (funds they lost in the game) into house revenue and
+    // withdraws the rest. This keeps on-chain accounting honest — lost funds
+    // become sweepable surplus instead of staying wrongly owed to the player.
+    function cashOut(uint256 forfeitAmount) external {
+        uint256 bal = balances[msg.sender];
+        require(forfeitAmount <= bal, "forfeit exceeds balance");
+        uint256 payout = bal - forfeitAmount;
+        balances[msg.sender] = 0;
+        totalLiabilities -= bal; // whole balance leaves liabilities
+        // `forfeitAmount` stays in the contract as surplus (realized revenue).
+        if (payout > 0) {
+            (bool ok, ) = payable(msg.sender).call{value: payout}("");
+            require(ok, "payout failed");
+        }
+        emit Withdrawn(msg.sender, payout);
+        if (forfeitAmount > 0) emit RevenueRealized(msg.sender, forfeitAmount);
+    }
+
     // Owner records house revenue: the `amount` a player lost in the game moves
     // out of their withdrawable balance. The ETH stays in the contract, now as
     // surplus (revenue) rather than a liability.
