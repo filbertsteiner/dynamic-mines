@@ -1,54 +1,24 @@
-import { useEffect, useState } from "react";
-import {
-  useUser,
-  useSendEmailOTP,
-  useVerifyOTP,
-} from "@dynamic-labs-sdk/react-hooks";
-import { useDevLog } from "../dev/DevLog";
+import { useState } from "react";
 
-// Step-up authentication: before a sensitive action (e.g. sweeping the vault),
-// re-verify the user with the same email OTP they log in with. This mirrors
-// Dynamic's step-up pattern — confirm it's really them right before it matters.
+// Confirmation gate for a sensitive operator action (e.g. sweeping revenue to
+// the treasury). Reviews the action and requires an explicit authorization.
+//
+// NOTE: the real protection is on-chain — the vault's `sweep` is owner-only and
+// can only move realized revenue. In production this step is where Dynamic
+// step-up auth (MFA / OTP elevated token) and Fireblocks policy approval gate
+// the action before funds move.
 export function StepUpModal({
   action,
-  onVerified,
+  detail,
+  onConfirm,
   onClose,
 }: {
   action: string;
-  onVerified: () => void;
+  detail: string;
+  onConfirm: () => void;
   onClose: () => void;
 }) {
-  const { data: user } = useUser();
-  const email = user?.email;
-  const { log } = useDevLog();
-  const { mutate: sendEmailOTP, data: otpVerification } = useSendEmailOTP();
-  const { mutate: verifyOTP, isPending } = useVerifyOTP();
-  const [code, setCode] = useState("");
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (email && !sent) {
-      setSent(true);
-      log({ category: "auth", onChain: false, title: `Step-up: sendEmailOTP for ${action}` });
-      sendEmailOTP({ email });
-    }
-  }, [email, sent, action, sendEmailOTP, log]);
-
-  function verify() {
-    if (!otpVerification) return;
-    setError(null);
-    verifyOTP(
-      { otpVerification, verificationToken: code },
-      {
-        onSuccess: () => {
-          log({ category: "auth", onChain: false, title: `Step-up verified → ${action}` });
-          onVerified();
-        },
-        onError: (e) => setError(e instanceof Error ? e.message : "Verification failed"),
-      }
-    );
-  }
+  const [authorized, setAuthorized] = useState(false);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -57,30 +27,27 @@ export function StepUpModal({
           ✕
         </button>
         <div className="wc-head">
-          <strong>Confirm it's you</strong>
-          <p className="hint">
-            Sensitive action ({action}). Enter the code we sent to{" "}
-            <strong>{email ?? "your email"}</strong>.
-          </p>
+          <strong>Confirm {action}</strong>
+          <p className="hint">{detail}</p>
         </div>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="6-digit code"
-          inputMode="numeric"
-          style={{ width: "100%" }}
-        />
-        <button
-          className="accent"
-          disabled={!code || !otpVerification || isPending}
-          onClick={verify}
-        >
-          {isPending ? "Verifying…" : "Verify & continue"}
+
+        <label className="check" style={{ justifyContent: "center" }}>
+          <input
+            type="checkbox"
+            checked={authorized}
+            onChange={(e) => setAuthorized(e.target.checked)}
+          />
+          I authorize this treasury sweep
+        </label>
+
+        <button className="accent" disabled={!authorized} onClick={onConfirm}>
+          Confirm &amp; sweep
         </button>
-        <button className="ghost" onClick={() => email && sendEmailOTP({ email })}>
-          Resend code
-        </button>
-        {error && <p className="hint err">{error}</p>}
+
+        <p className="hint">
+          Sensitive action. In production this is gated by Dynamic step-up auth
+          (MFA / one-time code) and Fireblocks policy approval before funds move.
+        </p>
       </div>
     </div>
   );

@@ -455,8 +455,9 @@ export function WalletPanel({
 
       {showStepUp && (
         <StepUpModal
-          action="sweep vault"
-          onVerified={() => void doSweep()}
+          action="revenue sweep"
+          detail={`Sweep ${surplus ? Number(surplus).toFixed(5) : "0"} ETH → ${short(sweepTo)} (treasury)`}
+          onConfirm={() => void doSweep()}
           onClose={() => setShowStepUp(false)}
         />
       )}
