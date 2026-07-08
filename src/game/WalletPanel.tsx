@@ -16,6 +16,7 @@ import {
   NETWORK_LABEL,
   GAME_CHAIN,
   ENVIRONMENT_ID,
+  TREASURY_ADDRESS,
 } from "../config";
 
 type EvmAccount = Parameters<
@@ -68,7 +69,7 @@ export function WalletPanel({
   const [vaultTotal, setVaultTotal] = useState<string | null>(null);
   const [surplus, setSurplus] = useState<string | null>(null);
   const [onchainBal, setOnchainBal] = useState<string | null>(null);
-  const [sweepTo, setSweepTo] = useState<string>(address);
+  const [sweepTo, setSweepTo] = useState<string>(TREASURY_ADDRESS);
   const [showStepUp, setShowStepUp] = useState(false);
   const [chainTick, setChainTick] = useState(0); // bump to refresh on-chain reads
   const settlingRef = useRef(false);
@@ -421,6 +422,17 @@ export function WalletPanel({
                 : "No revenue to realize yet"}
           </button>
 
+          <div className="row">
+            <span className="label">Treasury (Fireblocks)</span>
+            <a
+              className="hint"
+              href={EXPLORER_ADDRESS_URL(sweepTo)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              view balance ↗
+            </a>
+          </div>
           <input
             value={sweepTo}
             onChange={(e) => setSweepTo(e.target.value)}

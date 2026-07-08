@@ -44,6 +44,12 @@ export const GAME_NETWORK_DATA: NetworkData = {
 export const SHARED_VAULT_ADDRESS: `0x${string}` | null =
   "0x2286d03519a476e9229d9fb26de50d6628360012";
 
+// Treasury the operator sweeps realized revenue to — set this to a Fireblocks
+// wallet to show revenue flowing into Fireblocks in real time. Pre-fills the
+// Operator sweep field (still editable in the UI).
+export const TREASURY_ADDRESS: `0x${string}` =
+  "0x2007B0Eb09Eb79a28F81Ec8a189C5Ce79032b280";
+
 // Exchange rate between test-ETH and in-game credits.
 // 1 test-ETH = 100,000 credits  →  a 0.001 ETH deposit = 100 credits.
 export const CREDITS_PER_ETH = 100_000;
