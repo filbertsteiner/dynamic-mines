@@ -38,10 +38,11 @@ export const GAME_NETWORK_DATA: NetworkData = {
 // vault serve every visitor (the live/shared demo). Deploy it once (Deploy game
 // vault button), copy the address shown, and paste it here. While null, each
 // browser deploys its own vault locally (handy for solo dev).
-// Reset to null: GameVault upgraded to v4 (adds player-side cashOut that settles
-// game losses into surplus on withdraw). Redeploy from the app, then paste the
-// new address here to re-share it.
-export const SHARED_VAULT_ADDRESS: `0x${string}` | null = null;
+// Shared GameVault v5 on Base Sepolia — real-time revenue recognition:
+// players settle their spend on-chain as they play (surplus rises live), and the
+// owner can only ever sweep realized revenue. Every visitor shares this vault.
+export const SHARED_VAULT_ADDRESS: `0x${string}` | null =
+  "0x2286d03519a476e9229d9fb26de50d6628360012";
 
 // Exchange rate between test-ETH and in-game credits.
 // 1 test-ETH = 100,000 credits  →  a 0.001 ETH deposit = 100 credits.
