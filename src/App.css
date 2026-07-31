@@ -189,20 +189,35 @@ select:focus {
   gap: 22px;
 }
 
-/* ---------- Game switcher ---------- */
-.game-tabs {
+/* ---------- Game switcher (prominent) ---------- */
+.tabs.game-tabs {
+  padding: 5px;
+  gap: 6px;
   margin-bottom: 4px;
+  border-color: var(--border-strong);
 }
-.game-tabs button {
-  font-size: 0.9rem;
+.tabs.game-tabs button {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 10px;
+  border-radius: 9px;
+  color: var(--text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.tabs.game-tabs button:hover:not(.on) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.tabs.game-tabs button.on {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(134, 59, 255, 0.4);
 }
 
 /* ---------- Plinko board ---------- */
 .plinko {
   position: relative;
   width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
   aspect-ratio: 1 / 1;
   background: #0f0c18;
   border: 1px solid var(--border);
