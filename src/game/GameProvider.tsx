@@ -40,8 +40,8 @@ interface GameContextValue extends GameState {
   // The most recent points banked, for a real-time "+X" flourish.
   lastBank: { gain: number; at: number } | null;
   // Which game is active, and generic credit/points actions shared by games.
-  game: "mines" | "plinko";
-  setGame: (g: "mines" | "plinko") => void;
+  game: "mines" | "plinko" | "crash";
+  setGame: (g: "mines" | "plinko" | "crash") => void;
   spendCredits: (amount: number) => boolean;
   bankPoints: (points: number) => void;
 }
@@ -74,7 +74,7 @@ export function GameProvider({
   const [wager, setWager] = useState(10);
   const [mineCount, setMineCount] = useState(3);
   const [negativeCount, setNegativeCount] = useState(3);
-  const [game, setGame] = useState<"mines" | "plinko">("mines");
+  const [game, setGame] = useState<"mines" | "plinko" | "crash">("mines");
 
   // Load saved balances when the wallet address becomes known / changes.
   useEffect(() => {

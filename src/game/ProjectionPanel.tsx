@@ -1,6 +1,7 @@
 import { useGame } from "./GameProvider";
 import { TILE_COUNT, pointsAtClick, projectAhead, POINTS_PER_CREDIT } from "./mines";
 import { PLINKO_SLOTS, slotProbability } from "./plinko";
+import { winChance, crashPayout } from "./crash";
 
 const MINE_LINES: { mines: number; color: string }[] = [
   { mines: 1, color: "#67e8f9" },
@@ -158,10 +159,45 @@ function PlinkoRewards() {
   );
 }
 
+// Rewards view for Crash: cash-out target vs. chance and payout.
+const CRASH_TARGETS = [1.5, 2, 3, 5, 10, 25];
+function CrashRewards() {
+  const { wager } = useGame();
+  return (
+    <>
+      <p className="hint">
+        Cash-out target vs. chance and payout (a <strong>{wager}-credit</strong> bet):
+      </p>
+      <div className="crash-table">
+        {CRASH_TARGETS.map((t) => {
+          const chance = winChance(t) * 100;
+          return (
+            <div className="crash-row" key={t}>
+              <span className="ct-mult">{t}×</span>
+              <div className="ct-track">
+                <div className="ct-bar" style={{ width: `${chance}%` }} />
+              </div>
+              <span className="ct-chance">{chance.toFixed(0)}%</span>
+              <span className="ct-pts ok">
+                {crashPayout(wager, t).toLocaleString()}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="hint">
+        Ride longer for a bigger multiplier but lower odds. It's EV-neutral —
+        chance × payout equals your wager, always.
+      </p>
+    </>
+  );
+}
+
 // Inner content for the "Rewards" tab (no panel wrapper — the tab provides it).
 export function RewardsContent() {
   const { game, wager, mineCount, round } = useGame();
 
+  if (game === "crash") return <CrashRewards />;
   if (game === "plinko") return <PlinkoRewards />;
 
   if (round?.status === "playing") {

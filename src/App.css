@@ -298,6 +298,102 @@ select:focus {
   transform: translateY(-2px);
 }
 
+/* ---------- Crash board ---------- */
+.crash {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.08 / 1;
+  background: #0f0c18;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--purple-lt);
+}
+.crash.is-crashed {
+  color: #ef4444;
+}
+.crash.is-cashed {
+  color: #34d399;
+}
+.crash-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.crash-mult {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.crash.is-crashed .crash-mult {
+  color: #f87171;
+}
+.crash.is-cashed .crash-mult {
+  color: #4ade80;
+}
+.rocket {
+  position: absolute;
+  font-size: 1.7rem;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.crash-note {
+  position: absolute;
+  bottom: 10px;
+  left: 8px;
+  right: 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Crash rewards table */
+.crash-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.crash-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 40px 56px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+.ct-mult {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ct-track {
+  height: 8px;
+  background: #0f0c18;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ct-bar {
+  height: 100%;
+  background: var(--grad);
+}
+.ct-chance {
+  color: var(--text-dim);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ct-pts {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Tabs (stats panel) ---------- */
 .tabs {
   display: flex;
