@@ -67,6 +67,15 @@ export function PlinkoBoard() {
     setPhase("aiming");
   }
 
+  // Reset to a fresh, empty board (removes the landed puck + revealed tiles).
+  function clear() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setResult(null);
+    setLosing(new Set());
+    setPhase("idle");
+  }
+
   // "Drop" — release the puck; the values are randomly assigned NOW so you can't
   // aim for a known slot.
   function drop() {
@@ -144,7 +153,13 @@ export function PlinkoBoard() {
     <div className="panel">
       <div className="row">
         <p className="panel-title">Plinko</p>
-        <span className="label">time your drop</span>
+        {result ? (
+          <strong className={result.win ? "ok" : "err"} style={{ fontSize: "0.9rem" }}>
+            {result.win ? `✅ +${result.points.toLocaleString()} pts` : "💥 No points"}
+          </strong>
+        ) : (
+          <span className="label">time your drop</span>
+        )}
       </div>
 
       <div className="setup">
@@ -178,20 +193,21 @@ export function PlinkoBoard() {
             ))}
           </select>
         </label>
-        <button className="cashout" onClick={onButton} disabled={buttonDisabled}>
-          {buttonLabel}
-        </button>
+        {phase === "landed" ? (
+          <div className="status-actions">
+            <button className="cashout" onClick={play} disabled={!canPlay}>
+              Play again
+            </button>
+            <button className="secondary" onClick={clear}>
+              Clear
+            </button>
+          </div>
+        ) : (
+          <button className="cashout" onClick={onButton} disabled={buttonDisabled}>
+            {buttonLabel}
+          </button>
+        )}
       </div>
-
-      {result && (
-        <div className="status">
-          {result.win ? (
-            <span className="ok">✅ Banked {result.points.toLocaleString()} points!</span>
-          ) : (
-            <span className="err">💥 Negative slot — no points this drop.</span>
-          )}
-        </div>
-      )}
 
       <div className="plinko">
         <div className="plinko-brand">DYNAMIC</div>
@@ -228,9 +244,8 @@ export function PlinkoBoard() {
       </div>
 
       <p className="hint">
-        Values are hidden until you drop and reshuffle every round. More negatives
-        ⇒ bigger multipliers. Each drop spends your wager (recognized on-chain as
-        revenue); wins bank leaderboard points.
+        Values are hidden until you drop, and reshuffle each round. Each wager
+        settles on-chain as revenue; wins bank leaderboard points.
       </p>
     </div>
   );

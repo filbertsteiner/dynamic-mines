@@ -218,7 +218,7 @@ select:focus {
 .plinko {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1.08 / 1;
   background: #0f0c18;
   border: 1px solid var(--border);
   border-radius: 12px;
