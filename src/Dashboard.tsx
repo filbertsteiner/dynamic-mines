@@ -9,6 +9,8 @@ import { isEvmWalletAccount } from "@dynamic-labs-sdk/evm";
 import type { WalletAccount } from "@dynamic-labs-sdk/client";
 import { LOGO_URL } from "./config";
 import { LoginShowcase } from "./login/LoginShowcase";
+import { Splash } from "./login/Splash";
+import { useSocialRedirect } from "./login/SocialRedirectHandler";
 import { GameProvider } from "./game/GameProvider";
 import { WalletPanel } from "./game/WalletPanel";
 import { GameArea } from "./game/GameArea";
@@ -20,11 +22,14 @@ export function Dashboard() {
   const { data: accounts = [] } = useWalletAccounts();
   const { mutate: logout } = useLogout();
   const client = useDynamicClient();
+  const { completing } = useSocialRedirect();
 
   // Hooks return null/empty before init completes — gate on this.
-  if (initStatus !== "finished") return <p>Loading…</p>;
+  if (initStatus !== "finished") return <Splash label="Loading the arcade…" />;
 
-  if (!user) return <LoginShowcase />;
+  // While a social sign-in is being completed, show a splash instead of the
+  // login screen so the transition into the arcade is seamless.
+  if (!user) return completing ? <Splash label="Signing you in…" /> : <LoginShowcase />;
 
   const evmAccount = (accounts as WalletAccount[]).find(isEvmWalletAccount);
 

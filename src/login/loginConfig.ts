@@ -56,6 +56,11 @@ export const WALLETS: WalletOption[] = [
 
 export const ACCENTS = ["#863bff", "#4361ee", "#14b8a6", "#ec4899", "#f59e0b"];
 
+// The default tagline for the arcade sign-in.
+export const DEFAULT_TAGLINE = "Mines, Plinko & Crash — provably fair, fully on-chain.";
+// Old taglines that should be auto-upgraded to DEFAULT_TAGLINE on load.
+const STALE_TAGLINES = ["Dig for gems, dodge the bombs."];
+
 export interface LoginPreset {
   id: string;
   label: string;
@@ -73,7 +78,7 @@ export const PRESETS: LoginPreset[] = [
       theme: "midnight",
       accent: "#863bff",
       brandName: "Dynamic Arcade",
-      tagline: "Dig for gems, dodge the bombs.",
+      tagline: DEFAULT_TAGLINE,
       methods: { email: true, social: false, wallets: false, passkey: false },
       socialAbove: false,
       collapseWallets: false,
@@ -131,7 +136,14 @@ const STORAGE_KEY = "dynamic-arcade-login-config";
 export function loadLoginConfig(): LoginConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as LoginConfig;
+    if (raw) {
+      const cfg = JSON.parse(raw) as LoginConfig;
+      // Auto-upgrade a stale saved tagline so old browsers pick up the new one.
+      if (!cfg.tagline || STALE_TAGLINES.includes(cfg.tagline)) {
+        cfg.tagline = DEFAULT_TAGLINE;
+      }
+      return cfg;
+    }
   } catch {
     /* ignore */
   }

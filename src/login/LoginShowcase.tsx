@@ -23,7 +23,7 @@ export function LoginShowcase() {
   const card = (
     <div className="login-card">
       <AuthPanel config={config} />
-      <p className="login-foot">Powered by Dynamic · embedded wallets</p>
+      <p className="login-foot">Powered by Dynamic</p>
     </div>
   );
 

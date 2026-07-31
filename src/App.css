@@ -116,6 +116,38 @@ select:focus {
   letter-spacing: -0.02em;
 }
 
+/* ---------- Branded splash (init / signing in) ---------- */
+.splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.splash-logo {
+  width: 72px;
+  height: 72px;
+  filter: drop-shadow(0 8px 30px rgba(134, 59, 255, 0.55));
+  animation: splashpulse 1.4s ease-in-out infinite;
+}
+.splash-label {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+@keyframes splashpulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.82;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
 /* ---------- Login hero ---------- */
 .login-hero {
   min-height: 100vh;
