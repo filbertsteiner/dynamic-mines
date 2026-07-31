@@ -53,7 +53,10 @@ export function Dashboard() {
             </main>
             <aside className="side">
               <WalletPanel walletAccount={evmAccount} client={client} />
-              <StatsPanel name={user.email?.split("@")[0] ?? "you"} />
+              <StatsPanel
+                name={user.email?.split("@")[0] ?? "you"}
+                address={evmAccount.address}
+              />
             </aside>
           </div>
         </GameProvider>

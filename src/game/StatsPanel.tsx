@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LeaderboardContent } from "./LeaderboardPanel";
 import { RewardsContent } from "./ProjectionPanel";
 
-export function StatsPanel({ name }: { name: string }) {
+export function StatsPanel({ name, address }: { name: string; address: string }) {
   const [tab, setTab] = useState<"leaderboard" | "rewards">("leaderboard");
 
   return (
@@ -22,7 +22,7 @@ export function StatsPanel({ name }: { name: string }) {
         </button>
       </div>
       {tab === "leaderboard" ? (
-        <LeaderboardContent name={name} />
+        <LeaderboardContent name={name} address={address} />
       ) : (
         <RewardsContent />
       )}

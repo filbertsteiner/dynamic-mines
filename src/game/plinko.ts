@@ -54,24 +54,30 @@ export function slotMultipliers(losing: Set<number>): number[] {
   return mult;
 }
 
-// A puck released at continuous position `startPos` (0..PLINKO_SLOTS-1) bounces
-// ±0.5 slot per row. Returns the position at each row and the final slot.
+// A puck released at continuous position `startPos`. Fair Galton-board physics:
+// the LANDING slot follows the true binomial distribution independent of where
+// you release, so no drop position can be exploited (dropping at an edge does
+// NOT raise your odds of the rare, high-paying corners). The release point only
+// sets where the visual bounce begins. Returns the path and the final slot.
 export function simulateDrop(startPos: number): {
   positions: number[];
   slot: number;
 } {
-  const positions: number[] = [];
-  let pos = Math.max(0, Math.min(PLINKO_SLOTS - 1, startPos));
-  positions.push(pos);
-  for (let r = 0; r < PLINKO_ROWS; r++) {
-    pos += randomBit() ? 0.5 : -0.5;
-    pos = Math.max(0, Math.min(PLINKO_SLOTS - 1, pos));
+  // Fair binomial landing: 8 independent left/right bounces.
+  let slot = 0;
+  for (let r = 0; r < PLINKO_ROWS; r++) if (randomBit()) slot++;
+
+  // Build a believable bounce path from the release point down to that slot.
+  const start = Math.max(0, Math.min(PLINKO_SLOTS - 1, startPos));
+  const positions: number[] = [start];
+  let pos = start;
+  for (let r = 1; r <= PLINKO_ROWS; r++) {
+    const target = start + (slot - start) * (r / PLINKO_ROWS);
+    pos = Math.max(0, Math.min(PLINKO_SLOTS - 1, target + (Math.random() - 0.5) * 0.9));
     positions.push(pos);
   }
-  return {
-    positions,
-    slot: Math.max(0, Math.min(PLINKO_SLOTS - 1, Math.round(pos))),
-  };
+  positions[positions.length - 1] = slot; // land exactly in the fair slot
+  return { positions, slot };
 }
 
 export function puckPoints(wager: number, mult: number): number {
