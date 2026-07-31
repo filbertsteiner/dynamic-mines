@@ -9,7 +9,7 @@ function Brand({ config, big }: { config: LoginConfig; big?: boolean }) {
   return (
     <div className={`login-brand${big ? " big" : ""}`}>
       <img src={LOGO_URL} alt="" className="login-logo" />
-      <h1>{config.brandName || "Dynamic Mines"}</h1>
+      <h1>{config.brandName || "Dynamic Arcade"}</h1>
       <p className="login-tagline">{config.tagline}</p>
     </div>
   );

@@ -72,7 +72,7 @@ export const PRESETS: LoginPreset[] = [
       layout: "centered",
       theme: "midnight",
       accent: "#863bff",
-      brandName: "Dynamic Mines",
+      brandName: "Dynamic Arcade",
       tagline: "Dig for gems, dodge the bombs.",
       methods: { email: true, social: false, wallets: false, passkey: false },
       socialAbove: false,
@@ -87,7 +87,7 @@ export const PRESETS: LoginPreset[] = [
       layout: "centered",
       theme: "aurora",
       accent: "#4361ee",
-      brandName: "Dynamic Mines",
+      brandName: "Dynamic Arcade",
       tagline: "Sign in and start playing in seconds.",
       methods: { email: true, social: true, wallets: false, passkey: false },
       socialAbove: true,
@@ -102,7 +102,7 @@ export const PRESETS: LoginPreset[] = [
       layout: "split",
       theme: "midnight",
       accent: "#14b8a6",
-      brandName: "Dynamic Mines",
+      brandName: "Dynamic Arcade",
       tagline: "Connect your wallet and play on-chain.",
       methods: { email: true, social: false, wallets: true, passkey: false },
       socialAbove: false,
@@ -117,7 +117,7 @@ export const PRESETS: LoginPreset[] = [
       layout: "compact",
       theme: "aurora",
       accent: "#ec4899",
-      brandName: "Dynamic Mines",
+      brandName: "Dynamic Arcade",
       tagline: "Your wallet, your way.",
       methods: { email: true, social: true, wallets: true, passkey: true },
       socialAbove: true,
@@ -126,7 +126,7 @@ export const PRESETS: LoginPreset[] = [
   },
 ];
 
-const STORAGE_KEY = "dynamic-mines-login-config";
+const STORAGE_KEY = "dynamic-arcade-login-config";
 
 export function loadLoginConfig(): LoginConfig {
   try {

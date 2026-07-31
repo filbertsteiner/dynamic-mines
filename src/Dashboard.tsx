@@ -33,7 +33,7 @@ export function Dashboard() {
       <div className="appbar">
         <div className="brand">
           <img src={LOGO_URL} alt="" />
-          <span className="wordmark">Dynamic Mines</span>
+          <span className="wordmark">Dynamic Arcade</span>
         </div>
         <div className="row">
           <span className="who">{user.email}</span>

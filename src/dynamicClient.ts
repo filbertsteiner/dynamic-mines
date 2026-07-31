@@ -10,7 +10,7 @@ export const dynamicClient = createDynamicClient({
   autoInitialize: false,
   environmentId: ENVIRONMENT_ID,
   metadata: {
-    name: "Dynamic Quickstart",
+    name: "Dynamic Arcade",
     // IMPORTANT: the property is `universalLink`, not `url`
     universalLink: window.location.origin,
   },
