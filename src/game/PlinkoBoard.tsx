@@ -11,10 +11,12 @@ import {
 } from "./plinko";
 import { useDevLog } from "../dev/DevLog";
 
-const SLOTW = 100 / PLINKO_SLOTS; // slot width in %
-const STEP_MS = 145; // per-row fall time (slower = nicer to watch)
+const SLOTW = 100 / PLINKO_SLOTS;
+const STEP_MS = 145;
 const CENTER = (PLINKO_SLOTS - 1) / 2;
-const slotX = (pos: number) => (pos + 0.5) * SLOTW; // % center for a position
+const slotX = (pos: number) => (pos + 0.5) * SLOTW;
+
+type Phase = "idle" | "aiming" | "dropping" | "landed";
 
 export function PlinkoBoard() {
   const {
@@ -29,40 +31,52 @@ export function PlinkoBoard() {
   const { log } = useDevLog();
 
   const [wagerText, setWagerText] = useState(String(wager));
-  const [losing, setLosing] = useState(() => randomLosingSlots(negativeCount));
-  const [topPos, setTopPos] = useState(CENTER); // oscillating aim position
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [losing, setLosing] = useState<Set<number>>(new Set());
+  const [topPos, setTopPos] = useState(CENTER);
   const [fallPos, setFallPos] = useState({ x: slotX(CENTER), y: 3 });
-  const [dropping, setDropping] = useState(false);
   const [result, setResult] = useState<{ slot: number; points: number; win: boolean } | null>(null);
   const timers = useRef<number[]>([]);
 
   const mult = useMemo(() => slotMultipliers(losing), [losing]);
-  const canPlay = wager > 0 && wager <= credits && !dropping;
+  const revealed = phase === "dropping" || phase === "landed";
+  const canPlay = wager > 0 && wager <= credits;
 
-  // New random layout when the negative count changes.
-  useEffect(() => setLosing(randomLosingSlots(negativeCount)), [negativeCount]);
-
-  // Oscillate the puck left↔right at the top while not dropping, so the player
-  // aims and releases with timing.
+  // Oscillate the puck left↔right at the top while aiming.
   useEffect(() => {
-    if (dropping) return;
+    if (phase !== "aiming") return;
     let raf = 0;
     const start = performance.now();
     const amp = CENTER - 0.3;
     const loop = (now: number) => {
       const t = (now - start) / 1000;
-      setTopPos(CENTER + amp * Math.sin(t * (2 * Math.PI) / 1.8));
+      setTopPos(CENTER + amp * Math.sin((t * (2 * Math.PI)) / 1.8));
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [dropping]);
+  }, [phase]);
 
-  function drop() {
-    if (!canPlay || !spendCredits(wager)) return;
+  // "Play" — start a fresh round: hide the values, puck appears and oscillates.
+  function play() {
+    if (!canPlay) return;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setResult(null);
+    setLosing(new Set()); // hidden — tiles show "?"
+    setPhase("aiming");
+  }
+
+  // "Drop" — release the puck; the values are randomly assigned NOW so you can't
+  // aim for a known slot.
+  function drop() {
+    if (phase !== "aiming") return;
+    if (!spendCredits(wager)) return;
+    const newLosing = randomLosingSlots(negativeCount);
+    const newMult = slotMultipliers(newLosing);
+    setLosing(newLosing);
     const releasePos = topPos;
-    setDropping(true);
+    setPhase("dropping");
     setFallPos({ x: slotX(releasePos), y: 3 });
     log({
       category: "game",
@@ -72,8 +86,6 @@ export function PlinkoBoard() {
     });
 
     const { positions, slot } = simulateDrop(releasePos);
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
     positions.forEach((pos, k) => {
       const y = 3 + (k / PLINKO_ROWS) * 68;
       timers.current.push(
@@ -87,13 +99,12 @@ export function PlinkoBoard() {
     );
     timers.current.push(
       window.setTimeout(() => {
-        const m = mult[slot];
+        const m = newMult[slot];
         const win = m > 0;
         const points = win ? puckPoints(wager, m) : 0;
         if (win) bankPoints(points);
         setResult({ slot, points, win });
-        setDropping(false);
-        setLosing(randomLosingSlots(negativeCount)); // reshuffle for next drop
+        setPhase("landed");
         log({
           category: "game",
           onChain: false,
@@ -105,7 +116,6 @@ export function PlinkoBoard() {
     );
   }
 
-  // Decorative staggered peg field.
   const pegs: { x: number; y: number; key: string }[] = [];
   for (let r = 0; r < PLINKO_ROWS; r++) {
     const y = 6 + ((r + 0.5) / PLINKO_ROWS) * 66;
@@ -115,7 +125,20 @@ export function PlinkoBoard() {
     }
   }
 
-  const puckPos = dropping ? fallPos : { x: slotX(topPos), y: 3 };
+  const showPuck = phase !== "idle";
+  const puckPos = phase === "aiming" ? { x: slotX(topPos), y: 3 } : fallPos;
+  const buttonLabel =
+    credits <= 0 && phase === "idle"
+      ? "Deposit to play"
+      : phase === "aiming"
+        ? "Drop"
+        : phase === "dropping"
+          ? "Dropping…"
+          : phase === "landed"
+            ? "Play again"
+            : "Play";
+  const onButton = phase === "aiming" ? drop : play;
+  const buttonDisabled = phase === "dropping" || (phase !== "aiming" && !canPlay);
 
   return (
     <div className="panel">
@@ -132,6 +155,7 @@ export function PlinkoBoard() {
             min={1}
             max={credits}
             value={wagerText}
+            disabled={phase === "aiming" || phase === "dropping"}
             onChange={(e) => {
               setWagerText(e.target.value);
               const n = parseInt(e.target.value, 10);
@@ -144,6 +168,7 @@ export function PlinkoBoard() {
           Negatives
           <select
             value={negativeCount}
+            disabled={phase === "aiming" || phase === "dropping"}
             onChange={(e) => setNegativeCount(Number(e.target.value))}
           >
             {NEGATIVE_OPTIONS.map((n) => (
@@ -153,8 +178,8 @@ export function PlinkoBoard() {
             ))}
           </select>
         </label>
-        <button className="cashout" onClick={drop} disabled={!canPlay}>
-          {credits <= 0 ? "Deposit to play" : `Drop · ${wager}`}
+        <button className="cashout" onClick={onButton} disabled={buttonDisabled}>
+          {buttonLabel}
         </button>
       </div>
 
@@ -173,27 +198,38 @@ export function PlinkoBoard() {
         {pegs.map((p) => (
           <span key={p.key} className="peg" style={{ left: `${p.x}%`, top: `${p.y}%` }} />
         ))}
-        <span
-          className={`puck${dropping ? " falling" : ""}`}
-          style={{ left: `${puckPos.x}%`, top: `${puckPos.y}%` }}
-        />
+        {showPuck && (
+          <span
+            className={`puck${phase === "dropping" ? " falling" : ""}`}
+            style={{ left: `${puckPos.x}%`, top: `${puckPos.y}%` }}
+          />
+        )}
         <div className="slots">
-          {mult.map((m, i) => (
-            <div
-              key={i}
-              className={`pslot ${losing.has(i) ? "pslot-neg" : "pslot-pos"} ${
-                result && result.slot === i ? "pslot-hit" : ""
-              }`}
-            >
-              {losing.has(i) ? "✕" : `${m.toFixed(m < 10 ? 1 : 0)}×`}
-            </div>
-          ))}
+          {Array.from({ length: PLINKO_SLOTS }, (_, i) => {
+            if (!revealed)
+              return (
+                <div key={i} className="pslot pslot-unknown">
+                  ?
+                </div>
+              );
+            const neg = losing.has(i);
+            return (
+              <div
+                key={i}
+                className={`pslot ${neg ? "pslot-neg" : "pslot-pos"} ${
+                  result && result.slot === i ? "pslot-hit" : ""
+                }`}
+              >
+                {neg ? "✕" : `${mult[i].toFixed(mult[i] < 10 ? 1 : 0)}×`}
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <p className="hint">
-        The value slots reshuffle every drop. More negatives ⇒ bigger multipliers
-        on the winners. Each drop spends your wager (recognized on-chain as
+        Values are hidden until you drop and reshuffle every round. More negatives
+        ⇒ bigger multipliers. Each drop spends your wager (recognized on-chain as
         revenue); wins bank leaderboard points.
       </p>
     </div>

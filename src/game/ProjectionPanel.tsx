@@ -87,39 +87,72 @@ function Chart({ wager, mineCount }: { wager: number; mineCount: number }) {
   );
 }
 
-// Rewards view for Plinko: the potential multiplier at each slot.
-function PlinkoRewards() {
-  const { wager, negativeCount } = useGame();
-  const numWin = PLINKO_SLOTS - negativeCount;
-  const pot = Array.from(
-    { length: PLINKO_SLOTS },
-    (_, i) => 1 / slotProbability(i) / numWin
+// Rewards view for Plinko: multiplier at each slot, compared across risk levels.
+const PLINKO_NEGS = [1, 3, 5];
+const NEG_COLORS: Record<number, string> = {
+  1: "#67e8f9",
+  3: "#a78bfa",
+  5: "#f0abfc",
+};
+const Y_MIN = 0.4;
+const Y_MAX = 64;
+const barH = (m: number) =>
+  Math.max(
+    3,
+    Math.min(
+      100,
+      ((Math.log10(m) - Math.log10(Y_MIN)) /
+        (Math.log10(Y_MAX) - Math.log10(Y_MIN))) *
+        100
+    )
   );
-  const maxMult = Math.max(...pot);
+
+function PlinkoRewards() {
+  const { wager } = useGame();
   return (
     <>
       <p className="hint">
-        Potential multiplier per slot for a <strong>{wager}-credit</strong> drop
-        ({negativeCount} random slots are ✕ each drop; {numWin} pay):
+        Multiplier at each slot, compared across risk levels (a{" "}
+        <strong>{wager}-credit</strong> drop):
       </p>
-      <div className="reward-bars">
-        {pot.map((m, i) => (
-          <div key={i} className="reward-bar-col">
-            <div
-              className="reward-bar"
-              style={{
-                height: `${6 + (Math.log10(m + 1) / Math.log10(maxMult + 1)) * 78}%`,
-              }}
-            />
-            <span className="reward-x">{m.toFixed(m < 10 ? 1 : 0)}×</span>
-          </div>
+      <div className="pr-chart">
+        <div className="pr-axis">
+          {[64, 16, 4, 1].map((t) => (
+            <span key={t} style={{ bottom: `${barH(t)}%` }}>
+              {t}×
+            </span>
+          ))}
+        </div>
+        <div className="pr-plot">
+          {Array.from({ length: PLINKO_SLOTS }, (_, i) => (
+            <div key={i} className="pr-group">
+              {PLINKO_NEGS.map((n) => {
+                const m = 1 / slotProbability(i) / (PLINKO_SLOTS - n);
+                return (
+                  <div
+                    key={n}
+                    className="pr-bar"
+                    style={{ height: `${barH(m)}%`, background: NEG_COLORS[n] }}
+                    title={`${n} neg → ${m.toFixed(1)}×`}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="chart-legend">
+        {PLINKO_NEGS.map((n) => (
+          <span key={n}>
+            <span className="chip-dot" style={{ background: NEG_COLORS[n] }} />
+            {n} neg
+          </span>
         ))}
       </div>
       <p className="hint">
-        Best slot pays <strong>{maxMult.toFixed(0)}×</strong> your wager in points
-        ({(wager * maxMult * POINTS_PER_CREDIT).toLocaleString()} pts). More
-        negatives ⇒ every winning multiplier rises. It's EV-neutral: rarer slots
-        pay proportionally more.
+        More negatives ⇒ every winning multiplier climbs (fewer winners share the
+        pot). It's EV-neutral — rarer edge slots pay the most. Best slot:{" "}
+        <strong>64×</strong> ({(wager * 64 * POINTS_PER_CREDIT).toLocaleString()} pts).
       </p>
     </>
   );

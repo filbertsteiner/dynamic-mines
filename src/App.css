@@ -107,11 +107,11 @@ select:focus {
   gap: 10px;
 }
 .brand img {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
 }
 .brand .wordmark {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -165,10 +165,10 @@ select:focus {
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 28px 24px 60px;
+  padding: 16px 24px 48px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
 }
 
 /* Two-column: game centered as the focal point, wallet as a prominent aside */
@@ -201,11 +201,18 @@ select:focus {
 .plinko {
   position: relative;
   width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   aspect-ratio: 1 / 1;
   background: #0f0c18;
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+}
+.pslot-unknown {
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
 }
 .peg {
   position: absolute;
@@ -801,33 +808,46 @@ select:focus {
   font-weight: 700;
 }
 
-/* Plinko rewards bars */
-.reward-bars {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 3px;
-  height: 120px;
-  align-items: end;
-}
-.reward-bar-col {
+/* Plinko rewards — grouped bars (1/3/5 negatives) per slot */
+.pr-chart {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  gap: 3px;
+  gap: 6px;
+  height: 130px;
 }
-.reward-bar {
-  width: 100%;
-  background: linear-gradient(180deg, var(--purple-lt), var(--purple-deep));
-  border-radius: 4px 4px 0 0;
-  min-height: 4px;
+.pr-axis {
+  position: relative;
+  width: 26px;
+  flex-shrink: 0;
 }
-.reward-x {
+.pr-axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
   font-size: 0.6rem;
-  font-weight: 700;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+}
+.pr-plot {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2px;
+}
+.pr-group {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.5px;
+  height: 100%;
+}
+.pr-bar {
+  width: 5px;
+  border-radius: 2px 2px 0 0;
+  min-height: 3px;
 }
 
 /* ---------- Modal (wallet settings) ---------- */
