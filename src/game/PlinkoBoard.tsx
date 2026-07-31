@@ -173,11 +173,11 @@ export function PlinkoBoard() {
       </button>
     ) : phase === "landed" ? (
       <>
-        <button className="play-btn" onClick={play} disabled={!canPlay}>
-          Play again
-        </button>
         <button className="secondary" onClick={clear}>
           Clear
+        </button>
+        <button className="play-btn" onClick={play} disabled={!canPlay}>
+          Play again
         </button>
       </>
     ) : (
