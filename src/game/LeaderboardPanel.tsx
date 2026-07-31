@@ -20,16 +20,36 @@ const BOTS: { name: string; rate: number }[] = [
   { name: "PaperHandsPete", rate: 18 },
 ];
 
-// Privacy-safe public handle from a wallet address (never show others' emails).
+// Privacy-safe fallback handle from a wallet address (used until a display name
+// is set — never shows others' emails).
 function handleFor(address: string): string {
   return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "player";
 }
 
+const nameKey = (address: string) => `dynamic-arcade-name:${address.toLowerCase()}`;
+
 type Row = { name: string; score: number; you: boolean; rank: number };
 
-export function LeaderboardContent({ name, address }: { name: string; address: string }) {
+export function LeaderboardContent({ address }: { name: string; address: string }) {
   const { score, lastBank } = useGame();
   const [remote, setRemote] = useState<RemoteScore[]>([]);
+
+  // Editable public display name (persisted per wallet). Empty → truncated address.
+  const [displayName, setDisplayName] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  useEffect(() => {
+    setDisplayName(localStorage.getItem(nameKey(address)) ?? "");
+  }, [address]);
+
+  const myName = displayName.trim() || handleFor(address);
+
+  function saveName() {
+    const clean = draft.trim().slice(0, 24);
+    setDisplayName(clean);
+    localStorage.setItem(nameKey(address), clean);
+    setEditing(false);
+  }
 
   // Re-render each minute so the reset countdown ticks and today's slice grows.
   const [, setTick] = useState(0);
@@ -51,12 +71,13 @@ export function LeaderboardContent({ name, address }: { name: string; address: s
     };
   }, []);
 
-  // Push my score to the shared board, debounced so rapid banks coalesce.
+  // Push my score + display name to the shared board, debounced so rapid banks
+  // (and name edits) coalesce.
   useEffect(() => {
     if (!remoteLeaderboardEnabled || score <= 0) return;
-    const id = setTimeout(() => submitScore(address, handleFor(address), score), 1500);
+    const id = setTimeout(() => submitScore(address, myName, score), 1200);
     return () => clearTimeout(id);
-  }, [score, address]);
+  }, [score, address, myName]);
 
   const recentBank = lastBank && Date.now() - lastBank.at < 4000 ? lastBank : null;
 
@@ -68,7 +89,7 @@ export function LeaderboardContent({ name, address }: { name: string; address: s
   const all: Omit<Row, "rank">[] = [
     ...BOTS.map((b) => ({ name: b.name, score: botWeeklyScore(b.name, b.rate), you: false })),
     ...remoteRows,
-    { name, score, you: true },
+    { name: myName, score, you: true },
   ].sort((a, b) => b.score - a.score);
 
   const myRank = all.findIndex((r) => r.you);
@@ -89,6 +110,43 @@ export function LeaderboardContent({ name, address }: { name: string; address: s
         <span className="lb-reset" title="The 7-day window rolls forward at UTC midnight">
           resets in {resetCountdown()}
         </span>
+      </div>
+
+      <div className="lb-identity">
+        {editing ? (
+          <>
+            <input
+              className="lb-name-input"
+              autoFocus
+              maxLength={24}
+              value={draft}
+              placeholder={handleFor(address)}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveName();
+                if (e.key === "Escape") setEditing(false);
+              }}
+            />
+            <button className="link" onClick={saveName}>
+              Save
+            </button>
+          </>
+        ) : (
+          <>
+            <span>
+              Playing as <strong>{myName}</strong>
+            </span>
+            <button
+              className="link"
+              onClick={() => {
+                setDraft(displayName);
+                setEditing(true);
+              }}
+            >
+              ✎ edit name
+            </button>
+          </>
+        )}
       </div>
 
       <ol className="lb">

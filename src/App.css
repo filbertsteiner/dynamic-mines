@@ -579,6 +579,42 @@ select:focus {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* Editable display name */
+.lb-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 0 2px 4px;
+}
+.lb-identity strong {
+  color: var(--text);
+}
+.lb-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 9px;
+  font-size: 0.85rem;
+}
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--purple-lt);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+button.link:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: none;
+}
 /* Stack on narrower screens */
 @media (max-width: 860px) {
   .layout {

@@ -100,6 +100,16 @@ export function WalletPanel({
     };
   }, [vaultAddress, address, readOwner, readVaultTotal, readSurplus, readVaultBalance, lastTx, chainTick]);
 
+  // Keep the on-chain reads fresh without a manual refresh. A read fired right
+  // after a tx can hit an RPC node that hasn't synced the new block yet, leaving
+  // the operator panel one move behind; polling self-heals that within a few
+  // seconds. It also reflects OTHER players' activity on the shared vault live.
+  useEffect(() => {
+    if (!vaultAddress) return;
+    const id = setInterval(() => setChainTick((t) => t + 1), 2500);
+    return () => clearInterval(id);
+  }, [vaultAddress]);
+
   // Real-time revenue recognition: whenever the player's on-chain balance
   // exceeds the value of their remaining credits (i.e. they've spent some),
   // settle that delta on-chain so it moves from "owed to players" to sweepable
