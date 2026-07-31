@@ -23,20 +23,30 @@ export function slotProbability(i: number): number {
   return binom(PLINKO_ROWS, i) / 2 ** PLINKO_ROWS;
 }
 
-// The center `negativeCount` slots are losing.
-export function losingSlots(negativeCount: number): Set<number> {
-  const center = Math.floor(PLINKO_SLOTS / 2);
-  const half = Math.floor(negativeCount / 2);
-  const set = new Set<number>();
-  for (let i = center - half; i <= center + half; i++) set.add(i);
-  return set;
+function randomInt(max: number): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] % max;
+}
+function randomBit(): boolean {
+  return (randomInt(2) & 1) === 1;
 }
 
-// Multiplier for each slot. Losing slots = 0. Winning slots are EV-neutral:
-// mult = (1 / landingProbability) / (number of winning slots), so edges pay big
-// and everything scales up as more slots become negative.
-export function slotMultipliers(negativeCount: number): number[] {
-  const losing = losingSlots(negativeCount);
+// Randomly place `negativeCount` losing slots anywhere on the board (not just
+// the center) — so the value layout is different every drop.
+export function randomLosingSlots(negativeCount: number): Set<number> {
+  const idx = Array.from({ length: PLINKO_SLOTS }, (_, i) => i);
+  for (let i = 0; i < negativeCount; i++) {
+    const j = i + randomInt(PLINKO_SLOTS - i);
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return new Set(idx.slice(0, negativeCount));
+}
+
+// Multiplier for each slot given the current losing layout. Losing slots = 0.
+// Winning slots are EV-neutral: mult = (1 / landingProbability) / (winning
+// count), so rare slots pay big and everything scales up as more turn negative.
+export function slotMultipliers(losing: Set<number>): number[] {
   const winning: number[] = [];
   for (let i = 0; i < PLINKO_SLOTS; i++) if (!losing.has(i)) winning.push(i);
   const mult = new Array(PLINKO_SLOTS).fill(0);
@@ -44,26 +54,24 @@ export function slotMultipliers(negativeCount: number): number[] {
   return mult;
 }
 
-function randomBit(): boolean {
-  const buf = new Uint8Array(1);
-  crypto.getRandomValues(buf);
-  return (buf[0] & 1) === 1;
-}
-
-export interface PlinkoDrop {
-  moves: boolean[]; // right? per row
-  slot: number; // final slot = number of right moves
-}
-
-export function dropPuck(): PlinkoDrop {
-  const moves: boolean[] = [];
-  let rights = 0;
+// A puck released at continuous position `startPos` (0..PLINKO_SLOTS-1) bounces
+// ±0.5 slot per row. Returns the position at each row and the final slot.
+export function simulateDrop(startPos: number): {
+  positions: number[];
+  slot: number;
+} {
+  const positions: number[] = [];
+  let pos = Math.max(0, Math.min(PLINKO_SLOTS - 1, startPos));
+  positions.push(pos);
   for (let r = 0; r < PLINKO_ROWS; r++) {
-    const right = randomBit();
-    moves.push(right);
-    if (right) rights++;
+    pos += randomBit() ? 0.5 : -0.5;
+    pos = Math.max(0, Math.min(PLINKO_SLOTS - 1, pos));
+    positions.push(pos);
   }
-  return { moves, slot: rights };
+  return {
+    positions,
+    slot: Math.max(0, Math.min(PLINKO_SLOTS - 1, Math.round(pos))),
+  };
 }
 
 export function puckPoints(wager: number, mult: number): number {

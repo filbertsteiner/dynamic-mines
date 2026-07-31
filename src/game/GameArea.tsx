@@ -13,7 +13,7 @@ export function GameArea() {
           💎 Mines
         </button>
         <button className={game === "plinko" ? "on" : ""} onClick={() => setGame("plinko")}>
-          ⚡ Dynamic
+          ⚡ Plinko
         </button>
       </div>
       {game === "mines" ? <MinesBoard /> : <PlinkoBoard />}

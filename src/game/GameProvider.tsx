@@ -23,6 +23,7 @@ interface GameState {
   // Current bet setup, shared so the Rewards chart can reflect it live.
   wager: number;
   mineCount: number;
+  negativeCount: number;
 }
 
 interface GameContextValue extends GameState {
@@ -31,6 +32,7 @@ interface GameContextValue extends GameState {
   withdrawCredits: (amount: number) => void;
   setWager: (n: number) => void;
   setMineCount: (n: number) => void;
+  setNegativeCount: (n: number) => void;
   beginRound: (wager: number, mineCount: number) => void;
   reveal: (tile: number) => void;
   cashOut: () => void;
@@ -71,6 +73,7 @@ export function GameProvider({
   );
   const [wager, setWager] = useState(10);
   const [mineCount, setMineCount] = useState(3);
+  const [negativeCount, setNegativeCount] = useState(3);
   const [game, setGame] = useState<"mines" | "plinko">("mines");
 
   // Load saved balances when the wallet address becomes known / changes.
@@ -127,8 +130,10 @@ export function GameProvider({
       lastBank,
       wager,
       mineCount,
+      negativeCount,
       setWager,
       setMineCount,
+      setNegativeCount,
 
       addDepositCredits: (amount: number) => {
         setCredits((c) => c + amount);
@@ -189,7 +194,7 @@ export function GameProvider({
         setLastBank({ gain: points, at: Date.now() });
       },
     };
-  }, [credits, depositedCredits, score, round, lastBank, wager, mineCount, game]);
+  }, [credits, depositedCredits, score, round, lastBank, wager, mineCount, negativeCount, game]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }

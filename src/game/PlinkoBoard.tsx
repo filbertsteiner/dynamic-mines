@@ -1,39 +1,69 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "./GameProvider";
 import {
   PLINKO_ROWS,
   PLINKO_SLOTS,
   NEGATIVE_OPTIONS,
   slotMultipliers,
-  losingSlots,
-  dropPuck,
+  randomLosingSlots,
+  simulateDrop,
   puckPoints,
 } from "./plinko";
 import { useDevLog } from "../dev/DevLog";
 
 const SLOTW = 100 / PLINKO_SLOTS; // slot width in %
-const STEP_MS = 110;
+const STEP_MS = 145; // per-row fall time (slower = nicer to watch)
+const CENTER = (PLINKO_SLOTS - 1) / 2;
+const slotX = (pos: number) => (pos + 0.5) * SLOTW; // % center for a position
 
 export function PlinkoBoard() {
-  const { credits, wager, setWager, spendCredits, bankPoints } = useGame();
+  const {
+    credits,
+    wager,
+    setWager,
+    negativeCount,
+    setNegativeCount,
+    spendCredits,
+    bankPoints,
+  } = useGame();
   const { log } = useDevLog();
-  const [negativeCount, setNegativeCount] = useState(3);
+
   const [wagerText, setWagerText] = useState(String(wager));
-  const [puck, setPuck] = useState<{ x: number; y: number } | null>(null);
+  const [losing, setLosing] = useState(() => randomLosingSlots(negativeCount));
+  const [topPos, setTopPos] = useState(CENTER); // oscillating aim position
+  const [fallPos, setFallPos] = useState({ x: slotX(CENTER), y: 3 });
   const [dropping, setDropping] = useState(false);
   const [result, setResult] = useState<{ slot: number; points: number; win: boolean } | null>(null);
   const timers = useRef<number[]>([]);
 
-  const mult = useMemo(() => slotMultipliers(negativeCount), [negativeCount]);
-  const losing = useMemo(() => losingSlots(negativeCount), [negativeCount]);
+  const mult = useMemo(() => slotMultipliers(losing), [losing]);
   const canPlay = wager > 0 && wager <= credits && !dropping;
 
-  const slotX = (pos: number) => (pos + 0.5) * SLOTW; // % center for a slot-position
+  // New random layout when the negative count changes.
+  useEffect(() => setLosing(randomLosingSlots(negativeCount)), [negativeCount]);
+
+  // Oscillate the puck left↔right at the top while not dropping, so the player
+  // aims and releases with timing.
+  useEffect(() => {
+    if (dropping) return;
+    let raf = 0;
+    const start = performance.now();
+    const amp = CENTER - 0.3;
+    const loop = (now: number) => {
+      const t = (now - start) / 1000;
+      setTopPos(CENTER + amp * Math.sin(t * (2 * Math.PI) / 1.8));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [dropping]);
 
   function drop() {
     if (!canPlay || !spendCredits(wager)) return;
     setResult(null);
+    const releasePos = topPos;
     setDropping(true);
+    setFallPos({ x: slotX(releasePos), y: 3 });
     log({
       category: "game",
       onChain: false,
@@ -41,27 +71,19 @@ export function PlinkoBoard() {
       detail: "Local game — wager spent (settles on-chain as revenue).",
     });
 
-    const { moves, slot } = dropPuck();
-
-    // Puck position at each row (zigzag ±0.5 slot per row), then into the slot.
-    const path: { x: number; y: number }[] = [];
-    let rights = 0;
-    for (let k = 0; k <= PLINKO_ROWS; k++) {
-      const pos = rights + (PLINKO_ROWS - k) / 2;
-      path.push({ x: slotX(pos), y: 3 + (k / PLINKO_ROWS) * 68 });
-      if (k < PLINKO_ROWS && moves[k]) rights++;
-    }
-
+    const { positions, slot } = simulateDrop(releasePos);
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    setPuck(path[0]);
-    path.forEach((p, i) =>
-      timers.current.push(window.setTimeout(() => setPuck(p), i * STEP_MS))
-    );
+    positions.forEach((pos, k) => {
+      const y = 3 + (k / PLINKO_ROWS) * 68;
+      timers.current.push(
+        window.setTimeout(() => setFallPos({ x: slotX(pos), y }), k * STEP_MS)
+      );
+    });
 
-    const landMs = PLINKO_ROWS * STEP_MS + 120;
+    const landMs = (positions.length + 0.5) * STEP_MS;
     timers.current.push(
-      window.setTimeout(() => setPuck({ x: slotX(slot), y: 84 }), landMs)
+      window.setTimeout(() => setFallPos({ x: slotX(slot), y: 84 }), landMs)
     );
     timers.current.push(
       window.setTimeout(() => {
@@ -71,6 +93,7 @@ export function PlinkoBoard() {
         if (win) bankPoints(points);
         setResult({ slot, points, win });
         setDropping(false);
+        setLosing(randomLosingSlots(negativeCount)); // reshuffle for next drop
         log({
           category: "game",
           onChain: false,
@@ -78,7 +101,7 @@ export function PlinkoBoard() {
             ? `Plinko: +${points.toLocaleString()} pts (slot ×${m.toFixed(1)})`
             : "Plinko: negative slot — no points",
         });
-      }, landMs + 200)
+      }, landMs + 230)
     );
   }
 
@@ -92,11 +115,13 @@ export function PlinkoBoard() {
     }
   }
 
+  const puckPos = dropping ? fallPos : { x: slotX(topPos), y: 3 };
+
   return (
     <div className="panel">
       <div className="row">
-        <p className="panel-title">DYNAMIC</p>
-        <span className="label">drop the puck</span>
+        <p className="panel-title">Plinko</p>
+        <span className="label">time your drop</span>
       </div>
 
       <div className="setup">
@@ -128,8 +153,8 @@ export function PlinkoBoard() {
             ))}
           </select>
         </label>
-        <button onClick={drop} disabled={!canPlay}>
-          {credits <= 0 ? "Deposit to play" : `Drop for ${wager}`}
+        <button className="cashout" onClick={drop} disabled={!canPlay}>
+          {credits <= 0 ? "Deposit to play" : `Drop · ${wager}`}
         </button>
       </div>
 
@@ -144,12 +169,14 @@ export function PlinkoBoard() {
       )}
 
       <div className="plinko">
+        <div className="plinko-brand">DYNAMIC</div>
         {pegs.map((p) => (
           <span key={p.key} className="peg" style={{ left: `${p.x}%`, top: `${p.y}%` }} />
         ))}
-        {puck && (
-          <span className="puck" style={{ left: `${puck.x}%`, top: `${puck.y}%` }} />
-        )}
+        <span
+          className={`puck${dropping ? " falling" : ""}`}
+          style={{ left: `${puckPos.x}%`, top: `${puckPos.y}%` }}
+        />
         <div className="slots">
           {mult.map((m, i) => (
             <div
@@ -165,8 +192,9 @@ export function PlinkoBoard() {
       </div>
 
       <p className="hint">
-        More negative slots ⇒ bigger multipliers on the winners. Each drop spends
-        your wager (recognized on-chain as revenue); wins bank leaderboard points.
+        The value slots reshuffle every drop. More negatives ⇒ bigger multipliers
+        on the winners. Each drop spends your wager (recognized on-chain as
+        revenue); wins bank leaderboard points.
       </p>
     </div>
   );

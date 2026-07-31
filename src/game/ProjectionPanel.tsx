@@ -1,5 +1,6 @@
 import { useGame } from "./GameProvider";
-import { TILE_COUNT, pointsAtClick, projectAhead } from "./mines";
+import { TILE_COUNT, pointsAtClick, projectAhead, POINTS_PER_CREDIT } from "./mines";
+import { PLINKO_SLOTS, slotProbability } from "./plinko";
 
 const MINE_LINES: { mines: number; color: string }[] = [
   { mines: 1, color: "#67e8f9" },
@@ -86,9 +87,49 @@ function Chart({ wager, mineCount }: { wager: number; mineCount: number }) {
   );
 }
 
+// Rewards view for Plinko: the potential multiplier at each slot.
+function PlinkoRewards() {
+  const { wager, negativeCount } = useGame();
+  const numWin = PLINKO_SLOTS - negativeCount;
+  const pot = Array.from(
+    { length: PLINKO_SLOTS },
+    (_, i) => 1 / slotProbability(i) / numWin
+  );
+  const maxMult = Math.max(...pot);
+  return (
+    <>
+      <p className="hint">
+        Potential multiplier per slot for a <strong>{wager}-credit</strong> drop
+        ({negativeCount} random slots are ✕ each drop; {numWin} pay):
+      </p>
+      <div className="reward-bars">
+        {pot.map((m, i) => (
+          <div key={i} className="reward-bar-col">
+            <div
+              className="reward-bar"
+              style={{
+                height: `${6 + (Math.log10(m + 1) / Math.log10(maxMult + 1)) * 78}%`,
+              }}
+            />
+            <span className="reward-x">{m.toFixed(m < 10 ? 1 : 0)}×</span>
+          </div>
+        ))}
+      </div>
+      <p className="hint">
+        Best slot pays <strong>{maxMult.toFixed(0)}×</strong> your wager in points
+        ({(wager * maxMult * POINTS_PER_CREDIT).toLocaleString()} pts). More
+        negatives ⇒ every winning multiplier rises. It's EV-neutral: rarer slots
+        pay proportionally more.
+      </p>
+    </>
+  );
+}
+
 // Inner content for the "Rewards" tab (no panel wrapper — the tab provides it).
 export function RewardsContent() {
-  const { wager, mineCount, round } = useGame();
+  const { game, wager, mineCount, round } = useGame();
+
+  if (game === "plinko") return <PlinkoRewards />;
 
   if (round?.status === "playing") {
     const steps = projectAhead(wager, mineCount, round.revealed.size, 3);

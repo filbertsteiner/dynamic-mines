@@ -215,6 +215,20 @@ select:focus {
   background: #3a2f52;
   transform: translate(-50%, -50%);
 }
+.plinko-brand {
+  position: absolute;
+  top: 42%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  color: rgba(170, 59, 255, 0.12);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
 .puck {
   position: absolute;
   width: 15px;
@@ -223,8 +237,10 @@ select:focus {
   background: var(--grad);
   box-shadow: 0 0 12px var(--purple-lt);
   transform: translate(-50%, -50%);
-  transition: left 0.11s linear, top 0.11s cubic-bezier(0.5, 0, 0.9, 0.5);
   z-index: 2;
+}
+.puck.falling {
+  transition: left 0.145s linear, top 0.145s cubic-bezier(0.45, 0, 0.9, 0.55);
 }
 .slots {
   position: absolute;
@@ -783,6 +799,35 @@ select:focus {
 .chart-legend .active {
   color: var(--text);
   font-weight: 700;
+}
+
+/* Plinko rewards bars */
+.reward-bars {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 3px;
+  height: 120px;
+  align-items: end;
+}
+.reward-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 3px;
+}
+.reward-bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--purple-lt), var(--purple-deep));
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+.reward-x {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Modal (wallet settings) ---------- */
