@@ -189,6 +189,77 @@ select:focus {
   gap: 22px;
 }
 
+/* ---------- Game switcher ---------- */
+.game-tabs {
+  margin-bottom: 4px;
+}
+.game-tabs button {
+  font-size: 0.9rem;
+}
+
+/* ---------- Plinko board ---------- */
+.plinko {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #0f0c18;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.peg {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3a2f52;
+  transform: translate(-50%, -50%);
+}
+.puck {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--grad);
+  box-shadow: 0 0 12px var(--purple-lt);
+  transform: translate(-50%, -50%);
+  transition: left 0.11s linear, top 0.11s cubic-bezier(0.5, 0, 0.9, 0.5);
+  z-index: 2;
+}
+.slots {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 3px;
+}
+.pslot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 0;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pslot-pos {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.pslot-neg {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.pslot-hit {
+  outline: 2px solid #fff;
+  transform: translateY(-2px);
+}
+
 /* ---------- Tabs (stats panel) ---------- */
 .tabs {
   display: flex;

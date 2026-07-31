@@ -11,7 +11,7 @@ import { LOGO_URL } from "./config";
 import { LoginShowcase } from "./login/LoginShowcase";
 import { GameProvider } from "./game/GameProvider";
 import { WalletPanel } from "./game/WalletPanel";
-import { MinesBoard } from "./game/MinesBoard";
+import { GameArea } from "./game/GameArea";
 import { StatsPanel } from "./game/StatsPanel";
 
 export function Dashboard() {
@@ -49,7 +49,7 @@ export function Dashboard() {
         <GameProvider address={evmAccount.address}>
           <div className="layout">
             <main className="main">
-              <MinesBoard />
+              <GameArea />
             </main>
             <aside className="side">
               <WalletPanel walletAccount={evmAccount} client={client} />

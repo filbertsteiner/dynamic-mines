@@ -37,6 +37,11 @@ interface GameContextValue extends GameState {
   clearRound: () => void;
   // The most recent points banked, for a real-time "+X" flourish.
   lastBank: { gain: number; at: number } | null;
+  // Which game is active, and generic credit/points actions shared by games.
+  game: "mines" | "plinko";
+  setGame: (g: "mines" | "plinko") => void;
+  spendCredits: (amount: number) => boolean;
+  bankPoints: (points: number) => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -66,6 +71,7 @@ export function GameProvider({
   );
   const [wager, setWager] = useState(10);
   const [mineCount, setMineCount] = useState(3);
+  const [game, setGame] = useState<"mines" | "plinko">("mines");
 
   // Load saved balances when the wallet address becomes known / changes.
   useEffect(() => {
@@ -166,8 +172,24 @@ export function GameProvider({
       },
 
       clearRound: () => setRound(null),
+
+      game,
+      setGame,
+      // Generic credit spend used by any game (Plinko puck, etc.). Credits are
+      // consumed to play — the on-chain revenue settlement watches this.
+      spendCredits: (amount: number) => {
+        if (amount <= 0 || amount > credits) return false;
+        setCredits((c) => c - amount);
+        return true;
+      },
+      // Generic points bank used by any game — feeds the shared leaderboard.
+      bankPoints: (points: number) => {
+        if (points <= 0) return;
+        setScore((s) => s + points);
+        setLastBank({ gain: points, at: Date.now() });
+      },
     };
-  }, [credits, depositedCredits, score, round, lastBank, wager, mineCount]);
+  }, [credits, depositedCredits, score, round, lastBank, wager, mineCount, game]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
