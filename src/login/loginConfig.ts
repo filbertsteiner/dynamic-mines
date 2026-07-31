@@ -56,10 +56,14 @@ export const WALLETS: WalletOption[] = [
 
 export const ACCENTS = ["#863bff", "#4361ee", "#14b8a6", "#ec4899", "#f59e0b"];
 
-// The default tagline for the arcade sign-in.
-export const DEFAULT_TAGLINE = "Mines, Plinko & Crash — provably fair, fully on-chain.";
+// The default tagline for the arcade sign-in. Keep it game-agnostic (no game
+// names) so adding/removing games never dates it, and no em-dashes.
+export const DEFAULT_TAGLINE = "Try your luck. Climb the leaderboard.";
 // Old taglines that should be auto-upgraded to DEFAULT_TAGLINE on load.
-const STALE_TAGLINES = ["Dig for gems, dodge the bombs."];
+const STALE_TAGLINES = [
+  "Dig for gems, dodge the bombs.",
+  "Mines, Plinko & Crash — provably fair, fully on-chain.",
+];
 
 export interface LoginPreset {
   id: string;
