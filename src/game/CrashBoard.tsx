@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useGame } from "./GameProvider";
 import { multiplierAt, sampleCrashPoint, crashPayout } from "./crash";
+import { GameShell } from "./GameShell";
 import { useDevLog } from "../dev/DevLog";
 
 type Phase = "idle" | "flying" | "ended";
 type Result = { cashedAt?: number; crashedAt: number; win: boolean; points: number };
 
 export function CrashBoard() {
-  const { credits, wager, setWager, spendCredits, bankPoints } = useGame();
+  const { credits, wager, spendCredits, bankPoints } = useGame();
   const { log } = useDevLog();
 
-  const [wagerText, setWagerText] = useState(String(wager));
   const [phase, setPhase] = useState<Phase>("idle");
   const [mult, setMult] = useState(1);
   const [result, setResult] = useState<Result | null>(null);
@@ -92,58 +92,45 @@ export function CrashBoard() {
   const rocketX = 8 + prog * 78;
   const rocketY = 88 - prog * 74;
 
+  const status = result ? (
+    <strong className={`result-tag ${result.win ? "ok" : "err"}`}>
+      {result.win
+        ? `✅ +${result.points.toLocaleString()} pts`
+        : `💥 Crashed @ ${result.crashedAt.toFixed(2)}×`}
+    </strong>
+  ) : (
+    <span className="label">cash out before it crashes</span>
+  );
+
+  const actions = flying ? (
+    <button className="cashout" onClick={cashOut}>
+      Cash out {mult.toFixed(2)}×
+    </button>
+  ) : phase === "ended" ? (
+    <>
+      <button className="play-btn" onClick={play} disabled={!canPlay}>
+        Play again
+      </button>
+      <button className="secondary" onClick={clear}>
+        Clear
+      </button>
+    </>
+  ) : (
+    <button className="play-btn" onClick={play} disabled={!canPlay}>
+      {credits <= 0 ? "Deposit to play" : `Bet ${wager}`}
+    </button>
+  );
+
+  const hint = (
+    <>
+      The multiplier climbs from 1.00×. Cash out to bank wager × multiplier in
+      points — but if it crashes first, you lose the wager. Each bet settles
+      on-chain as revenue.
+    </>
+  );
+
   return (
-    <div className="panel">
-      <div className="row">
-        <p className="panel-title">Crash</p>
-        {result ? (
-          <strong className={result.win ? "ok" : "err"} style={{ fontSize: "0.9rem" }}>
-            {result.win
-              ? `✅ +${result.points.toLocaleString()} pts`
-              : `💥 Crashed @ ${result.crashedAt.toFixed(2)}×`}
-          </strong>
-        ) : (
-          <span className="label">cash out before it crashes</span>
-        )}
-      </div>
-
-      <div className="setup">
-        <label>
-          Wager
-          <input
-            type="number"
-            min={1}
-            max={credits}
-            value={wagerText}
-            disabled={flying}
-            onChange={(e) => {
-              setWagerText(e.target.value);
-              const n = parseInt(e.target.value, 10);
-              if (!Number.isNaN(n)) setWager(n);
-            }}
-            onBlur={() => setWagerText(String(wager))}
-          />
-        </label>
-        {flying ? (
-          <button className="cashout" onClick={cashOut}>
-            Cash out {mult.toFixed(2)}×
-          </button>
-        ) : phase === "ended" ? (
-          <div className="status-actions">
-            <button className="cashout" onClick={play} disabled={!canPlay}>
-              Play again
-            </button>
-            <button className="secondary" onClick={clear}>
-              Clear
-            </button>
-          </div>
-        ) : (
-          <button className="cashout" onClick={play} disabled={!canPlay}>
-            {credits <= 0 ? "Deposit to play" : `Bet ${wager}`}
-          </button>
-        )}
-      </div>
-
+    <GameShell title="Crash" status={status} actions={actions} wagerDisabled={flying} hint={hint}>
       <div className={`crash${crashed ? " is-crashed" : ""}${cashed ? " is-cashed" : ""}`}>
         <svg className="crash-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
           <path
@@ -166,12 +153,6 @@ export function CrashBoard() {
           </div>
         )}
       </div>
-
-      <p className="hint">
-        The multiplier climbs from 1.00×. Cash out to bank wager × multiplier in
-        points — but if it crashes first, you lose the wager. Each bet settles
-        on-chain as revenue.
-      </p>
-    </div>
+    </GameShell>
   );
 }

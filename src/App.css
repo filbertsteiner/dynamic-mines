@@ -189,7 +189,7 @@ select:focus {
   gap: 22px;
 }
 
-/* ---------- Game switcher (prominent) ---------- */
+/* ---------- Game switcher (segmented control) ---------- */
 .tabs.game-tabs {
   padding: 5px;
   gap: 6px;
@@ -201,16 +201,23 @@ select:focus {
   font-weight: 700;
   padding: 12px 10px;
   border-radius: 9px;
+  border: 1px solid transparent;
   color: var(--text-dim);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+/* Each inactive game reads as its own distinct segment (not just plain text). */
+.tabs.game-tabs button:not(.on) {
+  background: var(--surface-2);
+  border-color: var(--border);
 }
 .tabs.game-tabs button:hover:not(.on) {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-strong);
 }
 .tabs.game-tabs button.on {
   background: var(--grad);
   color: #fff;
+  border-color: transparent;
   box-shadow: 0 4px 18px rgba(134, 59, 255, 0.4);
 }
 
@@ -419,6 +426,33 @@ select:focus {
 }
 
 /* ---------- Leaderboard ---------- */
+.lb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 2px;
+}
+.lb-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.lb-range {
+  margin-left: 8px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.lb-reset {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--purple-lt);
+  background: rgba(134, 59, 255, 0.12);
+  border: 1px solid rgba(134, 59, 255, 0.35);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
 .lb {
   list-style: none;
   margin: 0;
@@ -637,9 +671,50 @@ select:focus {
 .setup select {
   width: 96px;
 }
+/* Action buttons are pinned to the right edge and share one size across every
+   game, so only the board + game-specific option control change as you toggle. */
+.setup-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
 .play-btn {
-  flex: 1;
   min-width: 150px;
+}
+.setup-actions .cashout {
+  min-width: 150px;
+}
+.setup-actions .secondary {
+  min-width: 0;
+}
+
+/* Header status slot — keeps a consistent live/result element on the right. */
+.game-head {
+  min-height: 20px;
+}
+.game-status .live {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.result-tag {
+  font-size: 0.9rem;
+}
+.game-hint .link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--purple-lt);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.game-hint .link:hover {
+  filter: brightness(1.15);
+  transform: none;
 }
 .status {
   justify-content: space-between;

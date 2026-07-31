@@ -9,6 +9,7 @@ import {
   simulateDrop,
   puckPoints,
 } from "./plinko";
+import { GameShell } from "./GameShell";
 import { useDevLog } from "../dev/DevLog";
 
 const SLOTW = 100 / PLINKO_SLOTS;
@@ -22,7 +23,6 @@ export function PlinkoBoard() {
   const {
     credits,
     wager,
-    setWager,
     negativeCount,
     setNegativeCount,
     spendCredits,
@@ -30,7 +30,6 @@ export function PlinkoBoard() {
   } = useGame();
   const { log } = useDevLog();
 
-  const [wagerText, setWagerText] = useState(String(wager));
   const [phase, setPhase] = useState<Phase>("idle");
   const [losing, setLosing] = useState<Set<number>>(new Set());
   const [topPos, setTopPos] = useState(CENTER);
@@ -41,6 +40,7 @@ export function PlinkoBoard() {
   const mult = useMemo(() => slotMultipliers(losing), [losing]);
   const revealed = phase === "dropping" || phase === "landed";
   const canPlay = wager > 0 && wager <= credits;
+  const busy = phase === "aiming" || phase === "dropping";
 
   // Oscillate the puck left↔right at the top while aiming.
   useEffect(() => {
@@ -136,79 +136,65 @@ export function PlinkoBoard() {
 
   const showPuck = phase !== "idle";
   const puckPos = phase === "aiming" ? { x: slotX(topPos), y: 3 } : fallPos;
-  const buttonLabel =
-    credits <= 0 && phase === "idle"
-      ? "Deposit to play"
-      : phase === "aiming"
-        ? "Drop"
-        : phase === "dropping"
-          ? "Dropping…"
-          : phase === "landed"
-            ? "Play again"
-            : "Play";
-  const onButton = phase === "aiming" ? drop : play;
-  const buttonDisabled = phase === "dropping" || (phase !== "aiming" && !canPlay);
+
+  const status = result ? (
+    <strong className={`result-tag ${result.win ? "ok" : "err"}`}>
+      {result.win ? `✅ +${result.points.toLocaleString()} pts` : "💥 No points"}
+    </strong>
+  ) : (
+    <span className="label">time your drop</span>
+  );
+
+  const options = (
+    <label>
+      Negatives
+      <select
+        value={negativeCount}
+        disabled={busy}
+        onChange={(e) => setNegativeCount(Number(e.target.value))}
+      >
+        {NEGATIVE_OPTIONS.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  const actions =
+    phase === "aiming" ? (
+      <button className="cashout" onClick={drop}>
+        Drop
+      </button>
+    ) : phase === "dropping" ? (
+      <button className="cashout" disabled>
+        Dropping…
+      </button>
+    ) : phase === "landed" ? (
+      <>
+        <button className="play-btn" onClick={play} disabled={!canPlay}>
+          Play again
+        </button>
+        <button className="secondary" onClick={clear}>
+          Clear
+        </button>
+      </>
+    ) : (
+      <button className="play-btn" onClick={play} disabled={!canPlay}>
+        {credits <= 0 ? "Deposit to play" : "Play"}
+      </button>
+    );
+
+  const hint = (
+    <>
+      Values are hidden until you drop, and reshuffle each round. Each wager
+      settles on-chain as revenue; wins bank leaderboard points.
+    </>
+  );
 
   return (
-    <div className="panel">
-      <div className="row">
-        <p className="panel-title">Plinko</p>
-        {result ? (
-          <strong className={result.win ? "ok" : "err"} style={{ fontSize: "0.9rem" }}>
-            {result.win ? `✅ +${result.points.toLocaleString()} pts` : "💥 No points"}
-          </strong>
-        ) : (
-          <span className="label">time your drop</span>
-        )}
-      </div>
-
-      <div className="setup">
-        <label>
-          Wager
-          <input
-            type="number"
-            min={1}
-            max={credits}
-            value={wagerText}
-            disabled={phase === "aiming" || phase === "dropping"}
-            onChange={(e) => {
-              setWagerText(e.target.value);
-              const n = parseInt(e.target.value, 10);
-              if (!Number.isNaN(n)) setWager(n);
-            }}
-            onBlur={() => setWagerText(String(wager))}
-          />
-        </label>
-        <label>
-          Negatives
-          <select
-            value={negativeCount}
-            disabled={phase === "aiming" || phase === "dropping"}
-            onChange={(e) => setNegativeCount(Number(e.target.value))}
-          >
-            {NEGATIVE_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        {phase === "landed" ? (
-          <div className="status-actions">
-            <button className="cashout" onClick={play} disabled={!canPlay}>
-              Play again
-            </button>
-            <button className="secondary" onClick={clear}>
-              Clear
-            </button>
-          </div>
-        ) : (
-          <button className="cashout" onClick={onButton} disabled={buttonDisabled}>
-            {buttonLabel}
-          </button>
-        )}
-      </div>
-
+    <GameShell title="Plinko" status={status} options={options} actions={actions} wagerDisabled={busy} hint={hint}>
       <div className="plinko">
         <div className="plinko-brand">DYNAMIC</div>
         {pegs.map((p) => (
@@ -242,11 +228,6 @@ export function PlinkoBoard() {
           })}
         </div>
       </div>
-
-      <p className="hint">
-        Values are hidden until you drop, and reshuffle each round. Each wager
-        settles on-chain as revenue; wins bank leaderboard points.
-      </p>
-    </div>
+    </GameShell>
   );
 }
