@@ -13,10 +13,12 @@ export function CrashBoard() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [mult, setMult] = useState(1);
+  const [sceneY, setSceneY] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const crashRef = useRef(0);
   const startRef = useRef(0);
   const rafRef = useRef(0);
+  const sceneRef = useRef(0);
   const wagerRef = useRef(wager);
 
   const canPlay = wager > 0 && wager <= credits;
@@ -28,6 +30,8 @@ export function CrashBoard() {
     crashRef.current = sampleCrashPoint();
     wagerRef.current = wager;
     startRef.current = performance.now();
+    sceneRef.current = 0;
+    setSceneY(0);
     setResult(null);
     setMult(1);
     setPhase("flying");
@@ -52,6 +56,9 @@ export function CrashBoard() {
         return;
       }
       setMult(m);
+      // Scroll the starfield to fake continued ascent — faster as it climbs.
+      sceneRef.current += 3 + Math.min(m, 25) * 0.7;
+      setSceneY(sceneRef.current);
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
@@ -87,10 +94,11 @@ export function CrashBoard() {
   const crashed = phase === "ended" && result !== null && !result.win;
   const cashed = phase === "ended" && result !== null && result.win;
 
-  // Rocket climbs on a log scale (reaches the top around 10×).
-  const prog = Math.min(1, Math.log(Math.max(1, mult)) / Math.log(10));
-  const rocketX = 8 + prog * 78;
-  const rocketY = 88 - prog * 74;
+  // The rocket climbs to a "cruising" spot (by ~6×) and then holds there — the
+  // scrolling starfield conveys further ascent, so it never runs out of room.
+  const climb = Math.min(1, Math.log(Math.max(1, mult)) / Math.log(6));
+  const rocketX = 12 + climb * 46;
+  const rocketY = 80 - climb * 50;
 
   const status = result ? (
     <strong className={`result-tag ${result.win ? "ok" : "err"}`}>
@@ -131,7 +139,12 @@ export function CrashBoard() {
 
   return (
     <GameShell title="Crash" status={status} actions={actions} wagerDisabled={flying} hint={hint}>
-      <div className={`crash${crashed ? " is-crashed" : ""}${cashed ? " is-cashed" : ""}`}>
+      <div
+        className={`crash${flying ? " is-flying" : ""}${crashed ? " is-crashed" : ""}${cashed ? " is-cashed" : ""}`}
+      >
+        <div className="crash-stars" style={{ backgroundPositionY: `${sceneY * 0.35}px` }} />
+        <div className="crash-stars2" style={{ backgroundPositionY: `${sceneY * 0.9}px` }} />
+        <div className="crash-horizon" style={{ transform: `translateY(${climb * 40}%)` }} />
         <svg className="crash-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
           <path
             d={`M8,88 Q ${(8 + rocketX) / 2},${(88 + rocketY) / 2 + 8} ${rocketX},${rocketY}`}

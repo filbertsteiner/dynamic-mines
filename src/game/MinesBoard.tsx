@@ -104,8 +104,7 @@ export function MinesBoard() {
 
   const hint = (
     <>
-      Reveal gems, avoid bombs — each safe tile lifts your multiplier. Each wager
-      settles on-chain as revenue.{" "}
+      Each safe tile lifts your multiplier — cash out before a bomb.{" "}
       <button className="link" onClick={() => setShowHelp(true)}>
         How to play →
       </button>

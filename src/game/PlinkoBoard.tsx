@@ -182,7 +182,7 @@ export function PlinkoBoard() {
       </>
     ) : (
       <button className="play-btn" onClick={play} disabled={!canPlay}>
-        {credits <= 0 ? "Deposit to play" : "Play"}
+        {credits <= 0 ? "Deposit to play" : `Bet ${wager}`}
       </button>
     );
 

@@ -74,7 +74,7 @@ export function GameProvider({
   const [wager, setWager] = useState(10);
   const [mineCount, setMineCount] = useState(3);
   const [negativeCount, setNegativeCount] = useState(3);
-  const [game, setGame] = useState<"mines" | "plinko" | "crash">("mines");
+  const [game, setGame] = useState<"mines" | "plinko" | "crash">("plinko");
 
   // Load saved balances when the wallet address becomes known / changes.
   useEffect(() => {
