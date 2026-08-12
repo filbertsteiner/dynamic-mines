@@ -57,7 +57,14 @@ export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {
       { networkId: String(GAME_CHAIN.id), walletAccount },
       client
     );
-    return createWalletClientForWalletAccount({ walletAccount }, client);
+    // Dynamic broadcasts through the RPC that Base Sepolia is registered with
+    // (the dashboard's endpoint), which can flake on shared/corporate networks.
+    // Retry transient failures — rebroadcasting the SAME signed tx is idempotent
+    // (same nonce/signature → the network dedupes it, never a double-send).
+    return createWalletClientForWalletAccount(
+      { walletAccount, httpTransportConfig: { retryCount: 4, retryDelay: 600 } },
+      client
+    );
   }, [walletAccount, client]);
 
   // One-time: deploy the escrow vault from the user's own embedded wallet.
