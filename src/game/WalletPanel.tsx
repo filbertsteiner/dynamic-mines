@@ -104,11 +104,16 @@ export function WalletPanel({
   // after a tx can hit an RPC node that hasn't synced the new block yet, leaving
   // the operator panel one move behind; polling self-heals that within a few
   // seconds. It also reflects OTHER players' activity on the shared vault live.
+  // IMPORTANT: pause while a transaction is in flight (busy) so read traffic
+  // never competes with / rate-limits the tx's own RPC calls, and pause when the
+  // tab is hidden to be a good citizen on the free public endpoints.
   useEffect(() => {
     if (!vaultAddress) return;
-    const id = setInterval(() => setChainTick((t) => t + 1), 2500);
+    const id = setInterval(() => {
+      if (busy === null && !document.hidden) setChainTick((t) => t + 1);
+    }, 4000);
     return () => clearInterval(id);
-  }, [vaultAddress]);
+  }, [vaultAddress, busy]);
 
   // Real-time revenue recognition: whenever the player's on-chain balance
   // exceeds the value of their remaining credits (i.e. they've spent some),

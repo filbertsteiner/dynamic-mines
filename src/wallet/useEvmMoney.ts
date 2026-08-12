@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   createPublicClient,
   http,
+  fallback,
   formatEther,
   parseEther,
   type WalletClient,
@@ -9,7 +10,7 @@ import {
 import { createWalletClientForWalletAccount } from "@dynamic-labs-sdk/evm/viem";
 import { addNetwork, switchActiveNetwork } from "@dynamic-labs-sdk/client";
 import type { DynamicClient } from "@dynamic-labs-sdk/client";
-import { GAME_CHAIN, GAME_NETWORK_DATA } from "../config";
+import { GAME_CHAIN, GAME_NETWORK_DATA, READ_RPC_URLS } from "../config";
 import { VAULT_ABI, VAULT_BYTECODE } from "../contracts/vault";
 import { useDevLog } from "../dev/DevLog";
 
@@ -17,10 +18,14 @@ type EvmAccount = Parameters<
   typeof createWalletClientForWalletAccount
 >[0]["walletAccount"];
 
-// Read-only client for the game chain — balances and receipts.
+// Read-only client for the game chain — balances and receipts. Uses a fallback
+// across several public RPC endpoints (with retries) so a flaky or rate-limited
+// endpoint auto-fails-over instead of breaking reads.
 const publicClient = createPublicClient({
   chain: GAME_CHAIN,
-  transport: http(),
+  transport: fallback(
+    READ_RPC_URLS.map((url) => http(url, { retryCount: 2, retryDelay: 250, timeout: 8000 }))
+  ),
 });
 
 export function useEvmMoney(walletAccount: EvmAccount, client: DynamicClient) {

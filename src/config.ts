@@ -17,6 +17,15 @@ export const LOGO_URL = `${import.meta.env.BASE_URL}favicon.svg`;
 // here has no real value. Get some from a faucet (see FAUCET_URL below).
 export const GAME_CHAIN = baseSepolia;
 
+// Multiple public Base Sepolia RPC endpoints for resilience. Transactions prefer
+// the official endpoint; background reads/polling prefer the OTHERS first, so
+// heavy read traffic never rate-limits the endpoint used to send transactions.
+const RPC_OFFICIAL = "https://sepolia.base.org";
+const RPC_PUBLICNODE = "https://base-sepolia-rpc.publicnode.com";
+const RPC_DRPC = "https://base-sepolia.drpc.org";
+export const WALLET_RPC_URLS = [RPC_OFFICIAL, RPC_PUBLICNODE, RPC_DRPC];
+export const READ_RPC_URLS = [RPC_PUBLICNODE, RPC_DRPC, RPC_OFFICIAL];
+
 // Network definition registered with the Dynamic wallet at runtime (via
 // addNetwork) so sending works even if the dashboard's network list doesn't
 // include Base Sepolia. networkId is the chain id as a string.
@@ -27,7 +36,7 @@ export const GAME_NETWORK_DATA: NetworkData = {
   displayName: "Base Sepolia",
   iconUrl: "https://sepolia.basescan.org/images/favicon.ico",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: { http: ["https://sepolia.base.org"] },
+  rpcUrls: { http: WALLET_RPC_URLS },
   blockExplorerUrls: ["https://sepolia.basescan.org"],
   testnet: true,
 };
