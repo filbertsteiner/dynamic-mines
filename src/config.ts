@@ -17,13 +17,16 @@ export const LOGO_URL = `${import.meta.env.BASE_URL}favicon.svg`;
 // here has no real value. Get some from a faucet (see FAUCET_URL below).
 export const GAME_CHAIN = baseSepolia;
 
-// Multiple public Base Sepolia RPC endpoints for resilience. Transactions prefer
-// the official endpoint; background reads/polling prefer the OTHERS first, so
-// heavy read traffic never rate-limits the endpoint used to send transactions.
+// Public Base Sepolia RPC endpoints.
 const RPC_OFFICIAL = "https://sepolia.base.org";
 const RPC_PUBLICNODE = "https://base-sepolia-rpc.publicnode.com";
 const RPC_DRPC = "https://base-sepolia.drpc.org";
-export const WALLET_RPC_URLS = [RPC_OFFICIAL, RPC_PUBLICNODE, RPC_DRPC];
+// Transactions use a SINGLE endpoint: the wallet reads its nonce from whatever
+// endpoint it talks to, and rotating across endpoints at different sync states
+// yields a stale nonce ("nonce too low") and a rejected tx. Reads have no nonce
+// concern, so they spread across all endpoints (with failover) for resilience —
+// and are kept OFF the tx endpoint so read traffic can't rate-limit sends.
+export const WALLET_RPC_URLS = [RPC_OFFICIAL];
 export const READ_RPC_URLS = [RPC_PUBLICNODE, RPC_DRPC, RPC_OFFICIAL];
 
 // Network definition registered with the Dynamic wallet at runtime (via
