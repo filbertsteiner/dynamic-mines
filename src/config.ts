@@ -21,13 +21,23 @@ export const GAME_CHAIN = baseSepolia;
 const RPC_OFFICIAL = "https://sepolia.base.org";
 const RPC_PUBLICNODE = "https://base-sepolia-rpc.publicnode.com";
 const RPC_DRPC = "https://base-sepolia.drpc.org";
+
+// A dedicated RPC URL (e.g. a free Alchemy/Infura Base Sepolia app) — STRONGLY
+// recommended for shared/corporate-network demos, where public endpoints throttle
+// or get proxy-blocked. If set, it's used for transactions and preferred for reads.
+const CUSTOM_RPC = (import.meta.env.VITE_RPC_URL as string | undefined)?.trim() || undefined;
+
 // Transactions use a SINGLE endpoint: the wallet reads its nonce from whatever
 // endpoint it talks to, and rotating across endpoints at different sync states
-// yields a stale nonce ("nonce too low") and a rejected tx. Reads have no nonce
-// concern, so they spread across all endpoints (with failover) for resilience —
-// and are kept OFF the tx endpoint so read traffic can't rate-limit sends.
-export const WALLET_RPC_URLS = [RPC_OFFICIAL];
-export const READ_RPC_URLS = [RPC_PUBLICNODE, RPC_DRPC, RPC_OFFICIAL];
+// yields a stale nonce ("nonce too low") and a rejected tx. Default to PublicNode
+// (higher limits + friendlier CORS than the official endpoint, which was
+// rate-limiting/"Failed to fetch"); a dedicated key overrides it.
+export const WALLET_RPC_URLS = [CUSTOM_RPC ?? RPC_PUBLICNODE];
+// Reads have no nonce concern, so they spread across endpoints (with failover)
+// for resilience — kept off the tx endpoint so read traffic can't throttle sends.
+export const READ_RPC_URLS = CUSTOM_RPC
+  ? [CUSTOM_RPC, RPC_DRPC, RPC_OFFICIAL, RPC_PUBLICNODE]
+  : [RPC_DRPC, RPC_OFFICIAL, RPC_PUBLICNODE];
 
 // Network definition registered with the Dynamic wallet at runtime (via
 // addNetwork) so sending works even if the dashboard's network list doesn't
