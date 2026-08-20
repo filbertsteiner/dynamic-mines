@@ -8,6 +8,7 @@ import { useVaultAddress } from "../wallet/useVaultAddress";
 import { useGame } from "./GameProvider";
 import { WalletSettings } from "./WalletSettings";
 import { StepUpModal } from "./StepUpModal";
+import { isOperator, isSuperAdmin } from "./roles";
 import {
   CREDITS_PER_ETH,
   FAUCET_URL,
@@ -29,9 +30,11 @@ const WEI_PER_CREDIT = parseEther("1") / BigInt(CREDITS_PER_ETH);
 export function WalletPanel({
   walletAccount,
   client,
+  userEmail,
 }: {
   walletAccount: EvmAccount;
   client: DynamicClient;
+  userEmail?: string;
 }) {
   const {
     address,
@@ -72,7 +75,24 @@ export function WalletPanel({
   const [sweepTo, setSweepTo] = useState<string>(TREASURY_ADDRESS);
   const [showStepUp, setShowStepUp] = useState(false);
   const [chainTick, setChainTick] = useState(0); // bump to refresh on-chain reads
+  const [operatorOpen, setOperatorOpen] = useState(
+    () => localStorage.getItem("dynamic-arcade-operator-open") !== "false"
+  );
   const settlingRef = useRef(false);
+
+  // Operator (house) tools are shown to Fireblocks operators (by email) OR the
+  // on-chain vault owner. NOTE: this is UI visibility only — the on-chain sweep
+  // is still gated by the contract's onlyOwner (and, for custodial mode, by the
+  // backend + Fireblocks policy). A client email check is not a security control.
+  const operatorAccess = isOperator(userEmail) || isOwner;
+  const superAdmin = isSuperAdmin(userEmail);
+
+  function toggleOperator() {
+    setOperatorOpen((v) => {
+      localStorage.setItem("dynamic-arcade-operator-open", String(!v));
+      return !v;
+    });
+  }
 
   useEffect(() => {
     if (!vaultAddress) return;
@@ -401,13 +421,27 @@ export function WalletPanel({
       )}
       {error && <p className="hint err">{error}</p>}
 
-      {/* Owner-only operator controls — realize revenue, then sweep to treasury. */}
-      {isOwner && (
+      {/* Operator controls — realize revenue, then sweep to treasury. Visible to
+          Fireblocks operators / the vault owner; collapsible so you can preview
+          the plain player view. */}
+      {operatorAccess && (
         <div className="operator">
+          <button className="operator-head" onClick={toggleOperator}>
+            <span className="net-badge">
+              🛠 Operator{superAdmin ? " · super admin" : ""}
+            </span>
+            <span className="operator-chevron">{operatorOpen ? "▾ hide" : "▸ show"}</span>
+          </button>
+          <p className="hint operator-note">
+            Operator tools — visible because you're signed in as a Fireblocks
+            operator. Players never see this.
+          </p>
+          {operatorOpen && (
+          <>
           <div className="row">
-            <span className="net-badge">🛠 Operator</span>
+            <span className="label">Vault balance</span>
             <span className="label">
-              Vault: {vaultTotal ? `${Number(vaultTotal).toFixed(5)} ETH` : "…"}
+              {vaultTotal ? `${Number(vaultTotal).toFixed(5)} ETH` : "…"}
             </span>
           </div>
           <div className="row">
@@ -465,6 +499,8 @@ export function WalletPanel({
             <strong>realized revenue</strong>. In production this treasury is a
             Fireblocks-secured wallet (MPC + policy).
           </p>
+          </>
+          )}
         </div>
       )}
 

@@ -665,6 +665,29 @@ button.link:hover:not(:disabled) {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.82rem;
 }
+.operator-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.operator-head:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+}
+.operator-chevron {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--purple-lt);
+}
+.operator-note {
+  margin-top: -4px;
+}
 
 /* Network badge */
 .net-badge {

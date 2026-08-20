@@ -57,7 +57,11 @@ export function Dashboard() {
               <GameArea />
             </main>
             <aside className="side">
-              <WalletPanel walletAccount={evmAccount} client={client} />
+              <WalletPanel
+                walletAccount={evmAccount}
+                client={client}
+                userEmail={user.email ?? undefined}
+              />
               <StatsPanel
                 name={user.email?.split("@")[0] ?? "you"}
                 address={evmAccount.address}
